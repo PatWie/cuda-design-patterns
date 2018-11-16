@@ -21,13 +21,22 @@ __global__ void readme_normal(float *src, float *dst,
 Instead, this small library offers EIGEN-like index accessing:
 
 ```cpp
-// find the bug
 // Used 8 registers, 368 bytes cmem[0]
 __global__ void readme_alternative(float *src, float *dst,
                                    int B, int H, int W, int C,
                                    int b, int h, int w, int c) {
   auto idx = Index<4>(B, H, W, c);
   dst[idx(b, h, w, c + 1)] = src[idx(b, h, w, c)];
+}
+
+// or even ...
+// Used 8 registers, 368 bytes cmem[0]
+__global__ void readme_alternative2(float *src, float *dst,
+                                    int B, int H, int W, int C,
+                                    int b, int h, int w, int c) {
+  auto src_T = Tensor(src, B, H, W, C);
+  auto dst_T = Tensor(dst, B, H, W, C);
+  dst_T(b, h, w, c + 1) = src_T(b, h, w, c);
 }
 ```
 
