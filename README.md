@@ -7,7 +7,7 @@ When writing CUDA code you usually have plenty of other important things to thin
 Further, each single character might introduce a bug.
 
 ```cpp
-// find the bug
+// spot the bug
 // Used 6 registers, 368 bytes cmem[0]
 __global__ void readme_normal(float *src, float *dst,
                               int B, int H, int W, int C,
@@ -91,8 +91,8 @@ __global__ void matrixMultiply_alternative(T *C, const T *A,
 
   T Cval = 0;
 
-  auto At = Tensor(A, H, W);    // supports both ways: without ...
-  auto Bt = Tensor<2>(B, H, W); // or with <2>
+  auto At = Tensor(A, H, W);    // supports both ways: without "<rank>"...
+  auto Bt = Tensor<2>(B, H, W); // ... or with "<2>"
   auto Ct = Tensor<2>(C, H, W);
 
   for (int m = 0; m < (W - 1) / num_threads + 1; ++m) {
