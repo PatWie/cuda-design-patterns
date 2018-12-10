@@ -14,6 +14,7 @@ limitations under the License.
 #ifndef LIB_CUDA_UTILS_H_
 #define LIB_CUDA_UTILS_H_
 
+#include <assert.h>
 #include <cuda_runtime.h>
 
 namespace cuda_utils {
@@ -56,41 +57,55 @@ struct position_helper<rank, remaining, T> {
 };  // namespace impl
 
 template <size_t rank_>
-struct BaseIndex {
+struct BaseNdIndex {
  protected:
   size_t dims_[rank_];
 
  public:
   template <class... Ts>
-  constexpr __device__ __forceinline__ BaseIndex(size_t i0, Ts... is) noexcept
+  constexpr __device__ __host__ __forceinline__ BaseNdIndex(size_t i0,
+                                                            Ts... is) noexcept
       : dims_{i0, is...} {}
 
   template <class... Ts>
-  constexpr __device__ __forceinline__ bool valid(size_t i0, Ts... is) const {
+  constexpr __device__ __host__ __forceinline__ bool valid(size_t i0,
+                                                           Ts... is) const {
     return valid_impl<0, Ts...>(i0, is...);
   }
 
-  constexpr __device__ __forceinline__ size_t rank() const { return rank_; }
-  constexpr __device__ __forceinline__ size_t dim(size_t axis) const {
+  constexpr __device__ __host__ __forceinline__ size_t rank() const {
+    return rank_;
+  }
+
+  // template <size_t axis>
+  // constexpr __device__ __host__ __forceinline__ size_t dim() const {
+  //   // TODO(patwie): check axis < rank (valid c++ code,
+  //   // but does not work in cuda)
+  //   // use as: const size_t W = Bt.template dim<1>();
+  //   static_assert(axis < rank, "axis < rank failed");
+  //   return dims_[axis];
+  // }
+
+  constexpr __device__ __host__ __forceinline__ size_t dim(size_t axis) const {
     return dims_[axis];
   }
 
  private:
   template <size_t num, class... Ts>
-  constexpr __device__ __forceinline__ bool valid_impl(size_t i0,
-                                                       Ts... is) const {
+  constexpr __device__ __host__ __forceinline__ bool valid_impl(
+      size_t i0, Ts... is) const {
     return (i0 < dims_[num]) && valid_impl<num + 1, Ts...>(is...);
   }
 
   template <size_t num, typename T>
-  constexpr __device__ __forceinline__ bool valid_impl(T i0) const {
+  constexpr __device__ __host__ __forceinline__ bool valid_impl(T i0) const {
     return (i0 < dims_[rank_ - 1]);
   }
 
  protected:
   template <class... Ts>
-  constexpr __device__ __forceinline__ size_t _index(size_t i0,
-                                                     Ts... is) const {
+  constexpr __device__ __host__ __forceinline__ size_t _index(size_t i0,
+                                                              Ts... is) const {
     return impl::position_helper<rank_, rank_, size_t, Ts...>().call(dims_, i0,
                                                                      is...);
   }
@@ -101,74 +116,76 @@ struct BaseIndex {
  *
  * The index object can handle various dimensions.
  *
- *     auto idx = Index<4>(B, H, W, C);
+ *     auto idx = NdIndex<4>(B, H, W, C);
  *     auto pos = idx(b, h, w, c);
  *
  * @param rank in each dimensions.
  */
 template <size_t rank_>
-struct Index : public BaseIndex<rank_> {
+struct NdIndex : public BaseNdIndex<rank_> {
  public:
   template <class... Ts>
-  constexpr __device__ __forceinline__ Index(size_t i0, Ts... is) noexcept
-      : BaseIndex<rank_>(i0, is...) {}
+  constexpr __device__ __host__ __forceinline__ NdIndex(size_t i0,
+                                                        Ts... is) noexcept
+      : BaseNdIndex<rank_>(i0, is...) {}
 
   template <class... Ts>
-  size_t __device__ __forceinline__ operator()(size_t i0, Ts... is) const {
+  size_t __device__ __host__ __forceinline__ operator()(size_t i0,
+                                                        Ts... is) const {
     return _index(i0, is...);
   }
 
   template <class... Ts>
-  size_t __device__ __forceinline__ operator[](size_t i0) const {
-    return BaseIndex<rank_>::dims_[i0];
+  size_t __device__ __host__ __forceinline__ operator[](size_t i0) const {
+    return BaseNdIndex<rank_>::dims_[i0];
   }
 };
 
 template <class T, size_t rank_>
-struct Tensor_ : public BaseIndex<rank_> {
+struct NdArray : public BaseNdIndex<rank_> {
   T* data_;
 
  public:
   template <class... Ts>
-  constexpr __device__ __forceinline__ Tensor_(T* data, size_t i0,
-                                               Ts... is) noexcept
-      : BaseIndex<rank_>(i0, is...), data_(data) {}
+  constexpr __device__ __host__ __forceinline__ NdArray(T* data, size_t i0,
+                                                        Ts... is) noexcept
+      : BaseNdIndex<rank_>(i0, is...), data_(data) {}
 
   /**
    * Returns value from given position if valid, else 0;
    *
-   *    auto T = Tensor(data, A, B, C);
+   *    auto T = make_ndarray(data, A, B, C);
    *    auto val = T.safe_value(a, b, c);
    *
    * is equal
    *
-   *    auto T = Tensor(data, A, B, C);
+   *    auto T = make_ndarray(data, A, B, C);
    *    auto val = T.valid(a, b, c) ? T(a, b, c) : 0;
    */
   template <class... Ts>
-  T __device__ __forceinline__ safe_value(size_t i0, Ts... is) const {
+  T __device__ __host__ __forceinline__ safe_value(size_t i0, Ts... is) const {
     return valid(i0, is...) ? data_[index(i0, is...)] : 0;
   }
 
   /**
    * Returns value from given position if valid, else 0;
    *
-   *    auto T = Tensor(data, A, B, C);
+   *    auto T = make_ndarray(data, A, B, C);
    *    auto val = T(a, b, c);
    */
   template <class... Ts>
-  T __device__ __forceinline__ operator()(size_t i0, Ts... is) const {
+  T __device__ __host__ __forceinline__ operator()(size_t i0, Ts... is) const {
     return data_[index(i0, is...)];
   }
 
   /**
    * Write value at given position.
    *
-   *    auto T = Tensor(data, A, B, C);
+   *    auto T = make_ndarray(data, A, B, C);
    *    T(a, b, c) = 42;
    */
   template <class... Ts>
-  T& __device__ operator()(size_t i0, Ts... is) {
+  T& __device__ __host__ operator()(size_t i0, Ts... is) {
     return data_[index(i0, is...)];
   }
 
@@ -176,7 +193,7 @@ struct Tensor_ : public BaseIndex<rank_> {
    * Wrap c-array read access
    */
   template <class... Ts>
-  T __device__ __forceinline__ operator[](size_t i0) const {
+  T __device__ __host__ __forceinline__ operator[](size_t i0) const {
     return data_[i0];
   }
 
@@ -184,17 +201,18 @@ struct Tensor_ : public BaseIndex<rank_> {
    * Wrap c-array write access
    */
   template <class... Ts>
-  T& __device__ operator[](size_t i0) {
+  T& __device__ __host__ operator[](size_t i0) {
     return data_[i0];
   }
 
   /**
    * Returns index from given position.
-   *    auto T = Tensor(data, A, B, C);
+   *    auto T = make_ndarray(data, A, B, C);
    *    size_t pos = T.index(a, b, c);
    */
   template <class TT, class... Ts>
-  constexpr __device__ __forceinline__ TT index(TT i0, Ts... is) const {
+  constexpr __device__ __host__ __forceinline__ TT index(TT i0,
+                                                         Ts... is) const {
     return _index(i0, is...);
   }
 
@@ -202,43 +220,24 @@ struct Tensor_ : public BaseIndex<rank_> {
 };
 
 /**
- * Create a tensor object.
- *
- * The tensor object is a combination of a flat array and nd-index.
- *
- *     const float* M = ...;
- *     auto Mt = Tensor(M, B, H, W, C);
- *     // same as auto Mt = Tensor<const float>(M, B, H, W, C);
- *     float val = Mt(b, h, w, c);
- *
- * WARNING, there is no double-check if the rank matches the number of
- * parameters.
- */
-template <typename Dtype, class... Ts>
-__device__ __forceinline__ auto Tensor(Dtype* arr, size_t N0, Ts... Ns)
-    -> Tensor_<Dtype, size_t(1) + sizeof...(Ts)> {
-  return Tensor_<Dtype, size_t(1) + sizeof...(Ts)>(arr, N0, Ns...);
-}
-
-/**
  * Create a tensor object but ensures rank.
  *
  * The tensor object is a combination of a flat array and nd-index.
  *
  *     const float* M = ...;
- *     auto Mt = Tensor<4>(M, B, H, W, C);
- *     // same as auto Mt = Tensor<const float>(M, B, H, W, C);
+ *     auto Mt = make_ndarray<float, 4>(M, B, H, W, C);
  *     float val = Mt(b, h, w, c);
  *
  * @param rank in each dimensions.
  */
-template <size_t rank, typename Dtype, class... Ts>
-__device__ __forceinline__ auto Tensor(Dtype* arr, size_t N0, Ts... Ns)
-    -> Tensor_<Dtype, rank> {
+template <typename Dtype, size_t rank, class... Ts>
+__device__ __host__ __forceinline__ auto make_ndarray(Dtype* arr, size_t N0,
+                                                      Ts... Ns)
+    -> NdArray<Dtype, rank> {
   static_assert(size_t(1) + sizeof...(Ts) == rank,
                 "Number of dimensions does not match rank! "
                 "YOU_MADE_A_PROGAMMING_MISTAKE");
-  return Tensor_<Dtype, rank>(arr, N0, Ns...);
+  return NdArray<Dtype, rank>(arr, N0, Ns...);
 }
 
 /**
@@ -253,7 +252,7 @@ __device__ __forceinline__ auto Tensor(Dtype* arr, size_t N0, Ts... Ns)
  * @param rank in each dimensions.
  */
 template <typename T>
-__device__ T* DynamicSharedMemory() {
+__device__ __host__ T* DynamicSharedMemory() {
   extern __shared__ __align__(sizeof(T)) unsigned char s_shm[];
   return reinterpret_cast<T*>(s_shm);
 }

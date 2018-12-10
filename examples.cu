@@ -9,8 +9,9 @@ nvcc examples.cu --expt-relaxed-constexpr -Xptxas="-v" -std=c++11 -o test
 
 ////////////////////////////////////////////////////////////////////////////////
 
-using cuda_utils::Index;
-using cuda_utils::Tensor;
+using cuda_utils::make_ndarray;
+using cuda_utils::NdArray;
+using cuda_utils::NdIndex;
 
 #define check_cuda_call(ans) \
   { gpuAssert((ans), __FILE__, __LINE__); }
@@ -61,16 +62,16 @@ __global__ void matrixMultiply____________tensor__________(T *C, const T *A,
   __shared__ T ds_M[num_threads][num_threads];
   __shared__ T ds_N[num_threads][num_threads];
 
-  int tx = threadIdx.x;
-  int ty = threadIdx.y;
-  int Ch = blockIdx.y * num_threads + ty;
-  int Cw = blockIdx.x * num_threads + tx;
+  const int tx = threadIdx.x;
+  const int ty = threadIdx.y;
+  const int Ch = blockIdx.y * num_threads + ty;
+  const int Cw = blockIdx.x * num_threads + tx;
 
   T Cval = 0;
 
-  auto At = Tensor(A, H, W);
-  auto Bt = Tensor<2>(B, H, W);
-  auto Ct = Tensor<2>(C, H, W);
+  auto At = make_ndarray<const T, 2>(A, H, W);
+  auto Bt = make_ndarray<const T, 2>(B, H, W);
+  auto Ct = make_ndarray<T, 2>(C, H, W);
 
   for (int m = 0; m < (W - 1) / num_threads + 1; ++m) {
     ds_M[ty][tx] = At.safe_value(Ch, m * num_threads + tx);
@@ -80,6 +81,32 @@ __global__ void matrixMultiply____________tensor__________(T *C, const T *A,
     } else {
       ds_N[ty][tx] = 0;
     }
+    __syncthreads();
+
+    for (int k = 0; k < num_threads; ++k) Cval += ds_M[ty][k] * ds_N[k][tx];
+    __syncthreads();
+  }
+  if (Ct.valid(Ch, Cw)) Ct(Ch, Cw) = Cval;
+}
+
+template <typename T, int num_threads>
+__global__ void matrixMultiply____________tensor2__________(
+    NdArray<T, 2> Ct, NdArray<const T, 2> At, NdArray<const T, 2> Bt) {
+  __shared__ T ds_M[num_threads][num_threads];
+  __shared__ T ds_N[num_threads][num_threads];
+
+  const int tx = threadIdx.x;
+  const int ty = threadIdx.y;
+  const int Ch = blockIdx.y * num_threads + ty;
+  const int Cw = blockIdx.x * num_threads + tx;
+  const size_t W = Bt.dim(1);
+  // const size_t W = Bt.template dim<1>();
+
+  T Cval = 0;
+
+  for (int m = 0; m < (W - 1) / num_threads + 1; ++m) {
+    ds_M[ty][tx] = At.safe_value(Ch, m * num_threads + tx);
+    ds_N[ty][tx] = Bt.safe_value(m * num_threads + ty, Cw);
     __syncthreads();
 
     for (int k = 0; k < num_threads; ++k) Cval += ds_M[ty][k] * ds_N[k][tx];
@@ -98,7 +125,7 @@ __global__ void index____________normal__________(int A, int B, int C, int a,
 
 __global__ void index____________tensor__________(int A, int B, int C, int a,
                                                   int b, int c) {
-  auto idx = Index<3>(A, B, C);
+  auto idx = NdIndex<3>(A, B, C);
   printf("value is %i\n", idx(a, b, c));
 }
 
@@ -127,7 +154,7 @@ __global__ void readme____________normal__________(float *src, float *dst,
 __global__ void readme____________tensor__________(float *src, float *dst,
                                                    int B, int H, int W, int C,
                                                    int b, int h, int w, int c) {
-  auto idx = Index<4>(B, H, W, C);
+  auto idx = NdIndex<4>(B, H, W, C);
   src[idx(b, h, w, c)] = dst[idx(b, h, w, c)];
   // auto src_t = Tensor(src, B, H, W, C);
   // auto dst_t = Tensor(dst, B, H, W, C);
@@ -177,16 +204,15 @@ __global__ void flex_deconv_simple(const int B, const int N, const int K,
 template <typename T>
 __global__ void flex_deconv_tensor(const int B, const int N, const int K,
                                    const int Dp, const int Din, const int Dout,
-                                   const T *positions,
-                                   const T *features,
+                                   const T *positions, const T *features,
                                    const int *neighborhood, const T *theta,
                                    const T *bias, T *output) {
-  auto pos_t = Tensor<3>(positions, B, Dp, N);
-  auto feat_t = Tensor<3>(features, B, Din, N);
-  auto theta_t = Tensor<3>(theta, Dp, Din, Dout);
-  auto bias_t = Tensor<2>(bias, Din, Dout);
-  auto output_t = Tensor<3>(output, B, Dout, N);
-  auto neighborhood_t = Tensor<3>(neighborhood, B, K, N);
+  auto pos_t = make_ndarray<const T, 3>(positions, B, Dp, N);
+  auto feat_t = make_ndarray<const T, 3>(features, B, Din, N);
+  auto theta_t = make_ndarray<const T, 3>(theta, Dp, Din, Dout);
+  auto bias_t = make_ndarray<const T, 2>(bias, Din, Dout);
+  auto neighborhood_t = make_ndarray<const int, 3>(neighborhood, B, K, N);
+  auto output_t = make_ndarray<T, 3>(output, B, Dout, N);
 
   const int b = blockIdx.z;
 
@@ -284,31 +310,32 @@ void run_simple() {
 
 void run_matmul() {
   int H = 4;
-  int W = 4;
+  int W = 5;
   float *matA = new float[H * W];
   float *matB = new float[H * W];
   float *matC1 = new float[H * W];
   float *matC2 = new float[H * W];
+  float *matC3 = new float[H * W];
 
-  for (int i = 0; i < H * W; ++i)
+  for (int i = 0; i < H * W; ++i) {
     matA[i] = rand() / static_cast<float>(RAND_MAX);
-  for (int i = 0; i < H * W; ++i)
     matB[i] = rand() / static_cast<float>(RAND_MAX);
-  for (int i = 0; i < H * W; ++i)
     matC1[i] = rand() / static_cast<float>(RAND_MAX);
-  for (int i = 0; i < H * W; ++i)
     matC2[i] = rand() / static_cast<float>(RAND_MAX);
+    matC3[i] = rand() / static_cast<float>(RAND_MAX);
+  }
 
   float *d_matA;
   float *d_matB;
   float *d_matC1;
-
   float *d_matC2;
+  float *d_matC3;
 
   check_cuda_call(cudaMalloc(&d_matA, sizeof(float) * H * W));
   check_cuda_call(cudaMalloc(&d_matB, sizeof(float) * H * W));
   check_cuda_call(cudaMalloc(&d_matC1, sizeof(float) * H * W));
   check_cuda_call(cudaMalloc(&d_matC2, sizeof(float) * H * W));
+  check_cuda_call(cudaMalloc(&d_matC3, sizeof(float) * H * W));
 
   check_cuda_call(
       cudaMemcpy(d_matA, matA, sizeof(float) * H * W, cudaMemcpyHostToDevice));
@@ -318,15 +345,34 @@ void run_matmul() {
                              cudaMemcpyHostToDevice));
   check_cuda_call(cudaMemcpy(d_matC2, matC2, sizeof(float) * H * W,
                              cudaMemcpyHostToDevice));
+  check_cuda_call(cudaMemcpy(d_matC3, matC3, sizeof(float) * H * W,
+                             cudaMemcpyHostToDevice));
 
   const int num_threads = 32;
   dim3 threads(num_threads, num_threads);
   dim3 grid((W + 1) / num_threads + 1, (W + 1) / num_threads + 1);
 
+
   matrixMultiply____________normal__________<float, 32>
       <<<grid, threads>>>(d_matC1, d_matA, d_matB, H, W);
+
+  check_cuda_call(cudaPeekAtLastError());
+  check_cuda_call(cudaGetLastError());
+  check_cuda_call(cudaDeviceSynchronize());
+
   matrixMultiply____________tensor__________<float, 32>
       <<<grid, threads>>>(d_matC2, d_matA, d_matB, H, W);
+
+  check_cuda_call(cudaPeekAtLastError());
+  check_cuda_call(cudaGetLastError());
+  check_cuda_call(cudaDeviceSynchronize());
+
+  auto Ct = make_ndarray<float, 2>(d_matC3, H, W);
+  auto At = make_ndarray<const float, 2>(d_matA, H, W);
+  auto Bt = make_ndarray<const float, 2>(d_matB, H, W);
+
+  matrixMultiply____________tensor2__________<float, 32>
+      <<<grid, threads>>>(Ct, At, Bt);
 
   check_cuda_call(cudaPeekAtLastError());
   check_cuda_call(cudaGetLastError());
@@ -336,12 +382,17 @@ void run_matmul() {
                              cudaMemcpyDeviceToHost));
   check_cuda_call(cudaMemcpy(matC2, d_matC2, H * W * sizeof(float),
                              cudaMemcpyDeviceToHost));
+  check_cuda_call(cudaMemcpy(matC3, d_matC3, H * W * sizeof(float),
+                             cudaMemcpyDeviceToHost));
 
   // verify
   printf("\n");
   for (int i = 0; i < H * W; ++i) {
     if (fabs(matC1[i] - matC2[i]) > 1e-8) {
       printf("%i %f %f %f ", i, matC1[i], matC2[i], matA[i]);
+    }
+    if (fabs(matC1[i] - matC3[i]) > 1e-8) {
+      printf("%i %f %f %f ", i, matC1[i], matC3[i], matA[i]);
     }
   }
   printf("\n");
@@ -350,9 +401,9 @@ void run_matmul() {
 /******************************************************************************/
 
 int main() {
-  run_readme();
-  run_simple();
   run_matmul();
-  run_flex_deconv();
+  // run_readme();
+  // run_simple();
+  // run_flex_deconv();
   return 0;
 }
