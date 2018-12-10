@@ -89,9 +89,9 @@ __global__ void matrixMultiply_normal(T *C, const T *A,
 
 // Used 26 registers, 8192 bytes smem, 352 bytes cmem[0]
 template <typename T, int num_threads>
-__global__ void matrixMultiply_alternative(NdArray<float, 4> Ct,
-                                           NdArray<const float, 4> At,
-                                           NdArray<const float, 4> Bt) {
+__global__ void matrixMultiply_alternative(NdArray<float, 2> Ct,
+                                           NdArray<const float, 2> At,
+                                           NdArray<const float, 2> Bt) {
   __shared__ T ds_M[num_threads][num_threads];
   __shared__ T ds_N[num_threads][num_threads];
 
