@@ -351,7 +351,6 @@ void run_matmul() {
   dim3 threads(num_threads, num_threads);
   dim3 grid((W + 1) / num_threads + 1, (W + 1) / num_threads + 1);
 
-
   matrixMultiply____________normal__________<float, 32>
       <<<grid, threads>>>(d_matC1, d_matA, d_matB, H, W);
 
@@ -385,16 +384,23 @@ void run_matmul() {
                              cudaMemcpyDeviceToHost));
 
   // verify
+  bool good = true;
   printf("\n");
   for (int i = 0; i < H * W; ++i) {
     if (fabs(matC1[i] - matC2[i]) > 1e-8) {
       printf("%i %f %f %f ", i, matC1[i], matC2[i], matA[i]);
+      good = false;
     }
     if (fabs(matC1[i] - matC3[i]) > 1e-8) {
       printf("%i %f %f %f ", i, matC1[i], matC3[i], matA[i]);
+      good = false;
     }
   }
   printf("\n");
+  if (good)
+    printf("good\n");
+  else
+    printf("bad\n");
 }
 
 /******************************************************************************/

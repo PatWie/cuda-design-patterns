@@ -83,6 +83,9 @@ struct BaseNdIndex {
    */
   template <class... Ts>
   constexpr cuda_inline bool valid(size_t i0, Ts... is) const {
+    static_assert(size_t(1) + sizeof...(Ts) == TRank,
+                  "Number of dimensions does not match rank! "
+                  "YOU_MADE_A_PROGAMMING_MISTAKE");
     return valid_impl<0, Ts...>(i0, is...);
   }
 
@@ -118,7 +121,7 @@ struct BaseNdIndex {
 
  protected:
   template <class... Ts>
-  constexpr cuda_inline size_t _index(size_t i0, Ts... is) const {
+  constexpr cuda_inline size_t index_(size_t i0, Ts... is) const {
     return internal::position_helper<TRank, TRank, size_t, Ts...>().call(
         dimensions_, i0, is...);
   }
@@ -139,7 +142,11 @@ struct NdIndex : public BaseNdIndex<TRank> {
  public:
   template <class... Ts>
   explicit constexpr cuda_inline NdIndex(size_t i0, Ts... is) noexcept
-      : BaseNdIndex<TRank>(i0, is...) {}
+      : BaseNdIndex<TRank>(i0, is...) {
+    static_assert(size_t(1) + sizeof...(Ts) == TRank,
+                  "Number of dimensions does not match rank! "
+                  "YOU_MADE_A_PROGAMMING_MISTAKE");
+  }
 
   /**
    * Get flattened index for a given position.
@@ -150,7 +157,10 @@ struct NdIndex : public BaseNdIndex<TRank> {
    */
   template <class... Ts>
   size_t cuda_inline operator()(size_t i0, Ts... is) const {
-    return _index(i0, is...);
+    static_assert(size_t(1) + sizeof...(Ts) == TRank,
+                  "Number of dimensions does not match rank! "
+                  "YOU_MADE_A_PROGAMMING_MISTAKE");
+    return index_(i0, is...);
   }
 
   /**
@@ -235,7 +245,10 @@ struct NdArray : public BaseNdIndex<TRank> {
    */
   template <class TT, class... Ts>
   constexpr cuda_inline TT index(TT i0, Ts... is) const {
-    return _index(i0, is...);
+    static_assert(size_t(1) + sizeof...(Ts) == TRank,
+                  "Number of dimensions does not match rank! "
+                  "YOU_MADE_A_PROGAMMING_MISTAKE");
+    return index_(i0, is...);
   }
 
   T* flat() { return data_; }
