@@ -1,113 +1,126 @@
-/* Copyright 2017 ComputerGraphics Tuebingen. All Rights Reserved.
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-    http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-==============================================================================*/
-// Author: Patrick Wieschollek, <mail@patwie.com>, 2018
+/* Copyright 2018 Authors. All Rights Reserved.
+
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Author: Patrick Wieschollek, <mail@patwie.com>, 2018
+ *
+ */
 
 #ifndef LIB_CUDA_UTILS_H_
 #define LIB_CUDA_UTILS_H_
+
+#define cuda_inline __device__ __host__ __forceinline__
 
 #include <assert.h>
 #include <cuda_runtime.h>
 
 namespace cuda_utils {
 
-namespace impl {
+namespace internal {
 
-template <size_t rank, size_t skip, size_t pos, size_t remaining>
+template <size_t TRank, size_t TSkip, size_t TPos, size_t TRemaining>
 struct pitch_helper {
-  constexpr size_t call(const size_t dims_[rank]) const {
-    return pitch_helper<rank, skip - 1, pos + 1, rank - pos - 1>().call(dims_);
+  constexpr size_t call(const size_t dimensions_[TRank]) const {
+    return pitch_helper<TRank, TSkip - 1, TPos + 1, TRank - TPos - 1>().call(
+        dimensions_);
   }
 };
 
-template <size_t rank, size_t pos, size_t remaining>
-struct pitch_helper<rank, 0, pos, remaining> {
-  constexpr size_t call(const size_t dims_[rank]) const {
-    return dims_[pos] *
-           pitch_helper<rank, 0, pos + 1, remaining - 1>().call(dims_);
+template <size_t TRank, size_t TPos, size_t TRemaining>
+struct pitch_helper<TRank, 0, TPos, TRemaining> {
+  constexpr size_t call(const size_t dimensions_[TRank]) const {
+    return dimensions_[TPos] *
+           pitch_helper<TRank, 0, TPos + 1, TRemaining - 1>().call(dimensions_);
   }
 };
 
-template <size_t rank, size_t pos>
-struct pitch_helper<rank, 0, pos, 0> {
-  constexpr size_t call(const size_t dims_[rank]) const { return 1; }
+template <size_t TRank, size_t TPos>
+struct pitch_helper<TRank, 0, TPos, 0> {
+  constexpr size_t call(const size_t dimensions_[TRank]) const { return 1; }
 };
 
-template <size_t rank, size_t remaining, class T, class... Ts>
+template <size_t TRank, size_t TRemaining, class T, class... Ts>
 struct position_helper {
-  constexpr size_t call(const size_t dims_[rank], T v, Ts... is) const {
-    return v * pitch_helper<rank, rank - remaining + 1, 0, rank>().call(dims_) +
-           position_helper<rank, remaining - 1, Ts...>().call(dims_, is...);
+  constexpr size_t call(const size_t dimensions_[TRank], T v, Ts... is) const {
+    return v * pitch_helper<TRank, TRank - TRemaining + 1, 0, TRank>().call(
+                   dimensions_) +
+           position_helper<TRank, TRemaining - 1, Ts...>().call(dimensions_,
+                                                                is...);
   }
 };
 
-template <size_t rank, size_t remaining, class T>
-struct position_helper<rank, remaining, T> {
-  constexpr size_t call(const size_t dims_[rank], T v) const { return v; }
+template <size_t TRank, size_t TRemaining, class T>
+struct position_helper<TRank, TRemaining, T> {
+  constexpr size_t call(const size_t dimensions_[TRank], T v) const {
+    return v;
+  }
 };
 
-};  // namespace impl
+};  // namespace internal
 
-template <size_t rank_>
+template <size_t TRank>
 struct BaseNdIndex {
  protected:
-  size_t dims_[rank_];
+  size_t dimensions_[TRank];
 
  public:
   template <class... Ts>
-  constexpr __device__ __host__ __forceinline__ BaseNdIndex(size_t i0,
-                                                            Ts... is) noexcept
-      : dims_{i0, is...} {}
+  explicit constexpr cuda_inline BaseNdIndex(size_t i0, Ts... is) noexcept
+      : dimensions_{i0, is...} {}
 
+  /**
+   * Check whether given coordinate is in range.
+   */
   template <class... Ts>
-  constexpr __device__ __host__ __forceinline__ bool valid(size_t i0,
-                                                           Ts... is) const {
+  constexpr cuda_inline bool valid(size_t i0, Ts... is) const {
     return valid_impl<0, Ts...>(i0, is...);
   }
 
-  constexpr __device__ __host__ __forceinline__ size_t rank() const {
-    return rank_;
-  }
+  /**
+   * Return the number of axes.
+   * @return number of axes
+   */
+  constexpr cuda_inline size_t rank() const { return TRank; }
 
-  // template <size_t axis>
-  // constexpr __device__ __host__ __forceinline__ size_t dim() const {
-  //   // TODO(patwie): check axis < rank (valid c++ code,
-  //   // but does not work in cuda)
-  //   // use as: const size_t W = Bt.template dim<1>();
-  //   static_assert(axis < rank, "axis < rank failed");
-  //   return dims_[axis];
-  // }
-
-  constexpr __device__ __host__ __forceinline__ size_t dim(size_t axis) const {
-    return dims_[axis];
+  /**
+   * Return the dimension for a given axis.
+   *
+   *     const size_t D = my_nd_array.template dim<1>();
+   *
+   * @return dimension for given axis
+   */
+  template <size_t TAxis>
+  constexpr cuda_inline size_t dim() const {
+    static_assert(TAxis < TRank, "axis < rank failed");
+    return dimensions_[TAxis];
   }
 
  private:
-  template <size_t num, class... Ts>
-  constexpr __device__ __host__ __forceinline__ bool valid_impl(
-      size_t i0, Ts... is) const {
-    return (i0 < dims_[num]) && valid_impl<num + 1, Ts...>(is...);
+  template <size_t TNum, class... Ts>
+  constexpr cuda_inline bool valid_impl(size_t i0, Ts... is) const {
+    return (i0 < dimensions_[TNum]) && valid_impl<TNum + 1, Ts...>(is...);
   }
 
-  template <size_t num, typename T>
-  constexpr __device__ __host__ __forceinline__ bool valid_impl(T i0) const {
-    return (i0 < dims_[rank_ - 1]);
+  template <size_t TNum, typename T>
+  constexpr cuda_inline bool valid_impl(T i0) const {
+    return (i0 < dimensions_[TRank - 1]);
   }
 
  protected:
   template <class... Ts>
-  constexpr __device__ __host__ __forceinline__ size_t _index(size_t i0,
-                                                              Ts... is) const {
-    return impl::position_helper<rank_, rank_, size_t, Ts...>().call(dims_, i0,
-                                                                     is...);
+  constexpr cuda_inline size_t _index(size_t i0, Ts... is) const {
+    return internal::position_helper<TRank, TRank, size_t, Ts...>().call(
+        dimensions_, i0, is...);
   }
 };
 
@@ -117,39 +130,49 @@ struct BaseNdIndex {
  * The index object can handle various dimensions.
  *
  *     auto idx = NdIndex<4>(B, H, W, C);
- *     auto pos = idx(b, h, w, c);
+ *     auto TPos = idx(b, h, w, c);
  *
  * @param rank in each dimensions.
  */
-template <size_t rank_>
-struct NdIndex : public BaseNdIndex<rank_> {
+template <size_t TRank>
+struct NdIndex : public BaseNdIndex<TRank> {
  public:
   template <class... Ts>
-  constexpr __device__ __host__ __forceinline__ NdIndex(size_t i0,
-                                                        Ts... is) noexcept
-      : BaseNdIndex<rank_>(i0, is...) {}
+  explicit constexpr cuda_inline NdIndex(size_t i0, Ts... is) noexcept
+      : BaseNdIndex<TRank>(i0, is...) {}
 
+  /**
+   * Get flattened index for a given position.
+   *
+   *     auto idx = NdIndex<4>(10, 20, 30, 40);
+   *     size_t actual = idx(1, 2, 3, 4);
+   *     size_t expected = 1 * (20 * 30 * 40) + 2 * (30 * 40) + 3 * (40) + 4;
+   */
   template <class... Ts>
-  size_t __device__ __host__ __forceinline__ operator()(size_t i0,
-                                                        Ts... is) const {
+  size_t cuda_inline operator()(size_t i0, Ts... is) const {
     return _index(i0, is...);
   }
 
+  /**
+   * Get dimension for a given axis.
+   *
+   *     auto idx = NdIndex<4>(10, 20, 30, 40);
+   *     size_t actual = idx[1]; // is 20
+   */
   template <class... Ts>
-  size_t __device__ __host__ __forceinline__ operator[](size_t i0) const {
-    return BaseNdIndex<rank_>::dims_[i0];
+  size_t cuda_inline operator[](size_t i0) const {
+    return BaseNdIndex<TRank>::dimensions_[i0];
   }
 };
 
-template <class T, size_t rank_>
-struct NdArray : public BaseNdIndex<rank_> {
+template <class T, size_t TRank>
+struct NdArray : public BaseNdIndex<TRank> {
   T* data_;
 
  public:
   template <class... Ts>
-  constexpr __device__ __host__ __forceinline__ NdArray(T* data, size_t i0,
-                                                        Ts... is) noexcept
-      : BaseNdIndex<rank_>(i0, is...), data_(data) {}
+  explicit constexpr cuda_inline NdArray(T* data, size_t i0, Ts... is) noexcept
+      : BaseNdIndex<TRank>(i0, is...), data_(data) {}
 
   /**
    * Returns value from given position if valid, else 0;
@@ -163,7 +186,7 @@ struct NdArray : public BaseNdIndex<rank_> {
    *    auto val = T.valid(a, b, c) ? T(a, b, c) : 0;
    */
   template <class... Ts>
-  T __device__ __host__ __forceinline__ safe_value(size_t i0, Ts... is) const {
+  T cuda_inline safe_value(size_t i0, Ts... is) const {
     return valid(i0, is...) ? data_[index(i0, is...)] : 0;
   }
 
@@ -174,7 +197,7 @@ struct NdArray : public BaseNdIndex<rank_> {
    *    auto val = T(a, b, c);
    */
   template <class... Ts>
-  T __device__ __host__ __forceinline__ operator()(size_t i0, Ts... is) const {
+  T cuda_inline operator()(size_t i0, Ts... is) const {
     return data_[index(i0, is...)];
   }
 
@@ -193,7 +216,7 @@ struct NdArray : public BaseNdIndex<rank_> {
    * Wrap c-array read access
    */
   template <class... Ts>
-  T __device__ __host__ __forceinline__ operator[](size_t i0) const {
+  T cuda_inline operator[](size_t i0) const {
     return data_[i0];
   }
 
@@ -208,11 +231,10 @@ struct NdArray : public BaseNdIndex<rank_> {
   /**
    * Returns index from given position.
    *    auto T = make_ndarray(data, A, B, C);
-   *    size_t pos = T.index(a, b, c);
+   *    size_t TPos = T.index(a, b, c);
    */
   template <class TT, class... Ts>
-  constexpr __device__ __host__ __forceinline__ TT index(TT i0,
-                                                         Ts... is) const {
+  constexpr cuda_inline TT index(TT i0, Ts... is) const {
     return _index(i0, is...);
   }
 
@@ -220,9 +242,9 @@ struct NdArray : public BaseNdIndex<rank_> {
 };
 
 /**
- * Create a tensor object but ensures rank.
+ * Create a multi-dim. array object but ensures rank.
  *
- * The tensor object is a combination of a flat array and nd-index.
+ * The multi-dim. array object is a combination of a flat array and nd-index.
  *
  *     const float* M = ...;
  *     auto Mt = make_ndarray<float, 4>(M, B, H, W, C);
@@ -230,14 +252,13 @@ struct NdArray : public BaseNdIndex<rank_> {
  *
  * @param rank in each dimensions.
  */
-template <typename Dtype, size_t rank, class... Ts>
-__device__ __host__ __forceinline__ auto make_ndarray(Dtype* arr, size_t N0,
-                                                      Ts... Ns)
-    -> NdArray<Dtype, rank> {
-  static_assert(size_t(1) + sizeof...(Ts) == rank,
+template <typename T, size_t TRank, class... Ts>
+cuda_inline auto make_ndarray(T* arr, size_t N0, Ts... Ns)
+    -> NdArray<T, TRank> {
+  static_assert(size_t(1) + sizeof...(Ts) == TRank,
                 "Number of dimensions does not match rank! "
                 "YOU_MADE_A_PROGAMMING_MISTAKE");
-  return NdArray<Dtype, rank>(arr, N0, Ns...);
+  return NdArray<T, TRank>(arr, N0, Ns...);
 }
 
 /**
@@ -245,9 +266,9 @@ __device__ __host__ __forceinline__ auto make_ndarray(Dtype* arr, size_t N0,
  *
  *     run_kernel<<<grid, block, shm_size>>>(...)
  *
- *     Dtype* s_shm = DynamicSharedMemory<Dtype>();
- *     Dtype* s_el1 = (Dtype*)&s_shm[0];
- *     Dtype* s_el2 = (Dtype*)&s_shm[10];
+ *     T* s_shm = DynamicSharedMemory<T>();
+ *     T* s_el1 = (T*)&s_shm[0];
+ *     T* s_el2 = (T*)&s_shm[10];
  *
  * @param rank in each dimensions.
  */
@@ -257,5 +278,7 @@ __device__ __host__ T* DynamicSharedMemory() {
   return reinterpret_cast<T*>(s_shm);
 }
 
-};      // namespace cuda_utils
+};  // namespace cuda_utils
+
+#undef cuda_inline
 #endif  // LIB_CUDA_UTILS_H_

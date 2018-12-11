@@ -99,8 +99,7 @@ __global__ void matrixMultiply____________tensor2__________(
   const int ty = threadIdx.y;
   const int Ch = blockIdx.y * num_threads + ty;
   const int Cw = blockIdx.x * num_threads + tx;
-  const size_t W = Bt.dim(1);
-  // const size_t W = Bt.template dim<1>();
+  const size_t W = Bt.template dim<1>();
 
   T Cval = 0;
 
