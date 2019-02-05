@@ -16,15 +16,17 @@
  *
  */
 
-#ifndef LIB_CUDA_UTILS_H_
-#define LIB_CUDA_UTILS_H_
+#ifndef LIB_CUDA_INDEX_H_
+#define LIB_CUDA_INDEX_H_
+
+#if __CUDACC__
 
 #define cuda_inline __device__ __host__ __forceinline__
 
 #include <assert.h>
 #include <cuda_runtime.h>
 
-namespace cuda_utils {
+namespace cuda {
 
 namespace internal {
 
@@ -52,7 +54,8 @@ struct pitch_helper<TRank, 0, TPos, 0> {
 template <size_t TRank, size_t TRemaining, class T, class... Ts>
 struct position_helper {
   constexpr size_t call(const size_t dimensions_[TRank], T v, Ts... is) const {
-    return v * pitch_helper<TRank, TRank - TRemaining + 1, 0, TRank>().call(
+    return v *
+               pitch_helper<TRank, TRank - TRemaining + 1, 0, TRank>().call(
                    dimensions_) +
            position_helper<TRank, TRemaining - 1, Ts...>().call(dimensions_,
                                                                 is...);
@@ -181,8 +184,9 @@ struct NdArray : public BaseNdIndex<TRank> {
 
  public:
   template <class... Ts>
-  explicit constexpr cuda_inline NdArray(T* data, size_t i0, Ts... is) noexcept
-      : BaseNdIndex<TRank>(i0, is...), data_(data) {}
+  explicit constexpr cuda_inline NdArray(T *data, size_t i0, Ts... is) noexcept
+      : BaseNdIndex<TRank>(i0, is...),
+        data_(data) {}
 
   /**
    * Returns value from given position if valid, else 0;
@@ -274,24 +278,10 @@ cuda_inline auto make_ndarray(T* arr, size_t N0, Ts... Ns)
   return NdArray<T, TRank>(arr, N0, Ns...);
 }
 
-/**
- * Proxy for shared memory when used in templates to avoid double extern.
- *
- *     run_kernel<<<grid, block, shm_size>>>(...)
- *
- *     T* s_shm = DynamicSharedMemory<T>();
- *     T* s_el1 = (T*)&s_shm[0];
- *     T* s_el2 = (T*)&s_shm[10];
- *
- * @param rank in each dimensions.
- */
-template <typename T>
-__device__ __host__ T* DynamicSharedMemory() {
-  extern __shared__ __align__(sizeof(T)) unsigned char s_shm[];
-  return reinterpret_cast<T*>(s_shm);
-}
-
-};  // namespace cuda_utils
+};  // namespace cuda
 
 #undef cuda_inline
-#endif  // LIB_CUDA_UTILS_H_
+
+#endif  // __CUDACC__
+
+#endif  // LIB_CUDA_INDEX_H_

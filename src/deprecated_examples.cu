@@ -1,3 +1,22 @@
+/* Copyright 2018 Authors. All Rights Reserved.
+
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Author: Patrick Wieschollek, <mail@patwie.com>, 2019
+ *         Fabian Groh, <fabian.groh@uni-tuebingen.de>, 2019
+ *
+ */
+
 #include <stdlib.h>
 #include <algorithm>
 #include <iostream>
@@ -351,15 +370,15 @@ void run_matmul() {
   dim3 threads(num_threads, num_threads);
   dim3 grid((W + 1) / num_threads + 1, (W + 1) / num_threads + 1);
 
-  matrixMultiply____________normal__________<float, 32>
-      <<<grid, threads>>>(d_matC1, d_matA, d_matB, H, W);
+  matrixMultiply____________normal__________<float, 32><<<grid, threads>>>(
+      d_matC1, d_matA, d_matB, H, W);
 
   check_cuda_call(cudaPeekAtLastError());
   check_cuda_call(cudaGetLastError());
   check_cuda_call(cudaDeviceSynchronize());
 
-  matrixMultiply____________tensor__________<float, 32>
-      <<<grid, threads>>>(d_matC2, d_matA, d_matB, H, W);
+  matrixMultiply____________tensor__________<float, 32><<<grid, threads>>>(
+      d_matC2, d_matA, d_matB, H, W);
 
   check_cuda_call(cudaPeekAtLastError());
   check_cuda_call(cudaGetLastError());
@@ -369,8 +388,8 @@ void run_matmul() {
   auto At = make_ndarray<const float, 2>(d_matA, H, W);
   auto Bt = make_ndarray<const float, 2>(d_matB, H, W);
 
-  matrixMultiply____________tensor2__________<float, 32>
-      <<<grid, threads>>>(Ct, At, Bt);
+  matrixMultiply____________tensor2__________<float, 32><<<grid, threads>>>(
+      Ct, At, Bt);
 
   check_cuda_call(cudaPeekAtLastError());
   check_cuda_call(cudaGetLastError());
