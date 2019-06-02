@@ -1,7 +1,7 @@
 # CUDA Design Patterns
 
-Some best practises from the last years when writing CUDA kernels. These functions
-do not dictate how to use CUDA, these just simply your workflow.
+Some best practises I collected over the last years when writing CUDA kernels. These functions
+do not dictate how to use CUDA, these just simplify your workflow. I am not a big fan of libraries which rename things via wrappers. All code below does add additional benefits in CUDA programming.
 
 ## CUDA Boilerplate Code
 
@@ -34,8 +34,8 @@ kernel.Launch();
 - This allows much better organization of used parameters. We recommend
 to write them at the end of the struct, such that when writing the CUDA kernel itself
 they are always visible.
-- These structs can contain or compute the launch configuration (grid, block, shm size).
-- Multiple kernel launches require less code.
+- These structs can contain or compute the launch configuration (grid, block, shm size) dependingnon the parameters.
+- Multiple kernel launches require less code, as we do not need to type out all parameters over and over again for a second or third launch.
 
 
 ## Functors
@@ -52,8 +52,8 @@ Multiply<GPUDevice, float>::Apply(A, B, 2, 2, C);
 
 **Reasons:**
 
-- Switching between different devices is obvious.
-- Understanding unit-tests which compare the output becomes more easy.
+- Switching between different devices is straight-forward.
+- Understanding unit-tests which compare and verify the output becomes more easy.
 
 ## Shared Memory
 
@@ -78,7 +78,7 @@ int* val2 = reinterpret_cast<int*>(&shm[5]); // 3 ints
 
 **Reasons:**
 
-- The number of values of specific data types to read should be on the same line as the declaration.
+- The number of values of specific data types to read should be on the same line as the declaration. This way adding additional shared memory becomes easier during development. 
 
 ## CUDA Kernel Dispatcher
 
@@ -169,12 +169,12 @@ __global__ void readme_normal(float *src, float *dst,
 - It is time-consuming and not worthwhile to concern yourself with index calculations. When writing CUDA code, you usually have many other vital things to ponder.
 - Each additional character increases the hit rate for a bug!
 - **I'm sick and tired of manually typing the indices.**
-- They can have a positive impact on the number of used registers.
+- NdArray can have a positive impact on the number of used registers.
 
 **Cons:**
 
 - The compiler might not be able to optimize the `NdArray` overhead "away".
-- They can have a negative impact on the number of used registers.
+- NdArray can have a negative impact on the number of used registers.
 
 ## CMake Setup
 
@@ -190,6 +190,6 @@ make test
 
 **Reasons:**
 
--  Most CIs do not have a CUDA runtime installed. Whenever, `WITH_CUDA=ON` the test code for CUDA will be also build.
--  FindCuda might be more robust than a custom Makefile
+-  Most CIs do not have a CUDA runtime installed. Whenever, `WITH_CUDA=ON` is activated the test code for CUDA will be also build.
+-  FindCuda might be more robust than a custom makefile.
 
