@@ -91,27 +91,27 @@ struct ExpertKernel2D<ValueT, 4, 3> : public cuda::Kernel {
 };
 }  // namespace
 
+// Workaround to initialize all kernels for the dispatcher.
 struct Initializer {
-  template <typename T>
-  void operator()(T* el) {
-    el->val = 42.f;
+  template <typename TKernel>
+  void operator()(TKernel* kernel) {
+    kernel->val = 42.f;
   }
 };
 
 int main(int argc, char const* argv[]) {
+  // We initialize these kernels using Initializer.
+  // From c++14 on, we could use a lambda function.
+  Initializer init;
+
+  cuda::KernelDispatcher<int> disp(true);
   ExpertKernel1D<float, 4> kernelA;
   ExpertKernel1D<float, 8> kernelB;
 
-  cuda::KernelDispatcher<int> disp(true);
-
-  // we initialize these kernels using Initializer
-  // From c++14 on, we could us a lambda function.
-  Initializer init;
-
   // for length up to 3 (inclusive) start kernelA
-  disp.Register(3, kernelA, init);
+  disp.Register(3, &kernelA, init);
   // for length up to 6 (inclusive) start kernelB
-  disp.Register(6, kernelB, init);
+  disp.Register(6, &kernelB, init);
 
   for (int i = 0; i < 9; ++i) {
     printf("%d : \n", i);
@@ -120,13 +120,13 @@ int main(int argc, char const* argv[]) {
   }
 
   // custom hyper-parameters
-  // before C++14 we cannot initialize these kernels automatically
-  ExpertKernel2D<float, 4, 3> kernelA2d;  // kernelA2d.val = 42;
-  ExpertKernel2D<float, 8, 4> kernelB2d;  // kernelB2d.val = 42;
+  // Before C++14 we cannot initialize these kernels automatically.
+  ExpertKernel2D<float, 4, 3> kernelA2d;
+  ExpertKernel2D<float, 8, 4> kernelB2d;
 
   cuda::KernelDispatcher<std::tuple<int, int>> disp2(true);
-  disp2.Register(std::make_tuple(4, 3), kernelA2d, init);
-  disp2.Register(std::make_tuple(9, 4), kernelB2d, init);
+  disp2.Register(std::make_tuple(4, 3), &kernelA2d, init);
+  disp2.Register(std::make_tuple(9, 4), &kernelB2d, init);
 
   for (int i = 0; i < 10; ++i) {
     for (int j = 0; j < 5; ++j) {

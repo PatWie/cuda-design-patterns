@@ -30,7 +30,7 @@ struct AddSharedMemoryCUDAKernel : public cuda::Kernel {
     dim3 block(2);
     dim3 grid(1);
 
-    cuda::MixedSharedMemory shm;
+    cuda::SharedMemory shm;
     shm.add<float>(5);
     shm.add<int>(3);
 
@@ -38,9 +38,9 @@ struct AddSharedMemoryCUDAKernel : public cuda::Kernel {
   }
 
   __device__ __forceinline__ void operator()() const override {
-    cuda::MixedSharedMemory shm;
-    float* floats_5 = shm.read<float>(5);
-    int* ints_3 = shm.read<int>(3);
+    cuda::SharedMemory shm;
+    float* floats_5 = shm.ref<float>(5);
+    int* ints_3 = shm.ref<int>(3);
 
     if (threadIdx.x == 0) {
       floats_5[0] = 1.f;

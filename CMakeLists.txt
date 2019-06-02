@@ -30,8 +30,8 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-# add_library(multiply_cpu SHARED src/multiply/multiply_cpu.cc )
-# list(APPEND LIBRARIES "multiply_cpu")
+add_library(multiply_cpu SHARED src/multiply/multiply_cpu.cc )
+list(APPEND LIBRARIES "multiply_cpu")
 
 if(WITH_CUDA)
   list(APPEND CMAKE_CXX_FLAGS "-DWITH_CUDA")
@@ -43,7 +43,6 @@ if(WITH_CUDA)
   find_package(CUDA REQUIRED)
   # Xptxas dumps register usage
   set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -std=c++11 -Xptxas=-v --expt-relaxed-constexpr -DWITH_CUDA")
-
 
   #CUDA Toolkit 8.x
   if(CUDA_VERSION_MAJOR MATCHES 8)
@@ -70,27 +69,27 @@ if(WITH_CUDA)
 endif(WITH_CUDA)
 
 
-# if(WITH_CUDA)
-#   # prepare gpu functions
-#   cuda_add_library(multiply_gpu SHARED src/multiply/multiply_gpu.cu )
-#   list(APPEND LIBRARIES "multiply_gpu")
-# endif(WITH_CUDA)
+if(WITH_CUDA)
+  # prepare gpu functions
+  cuda_add_library(multiply_gpu SHARED src/multiply/multiply_gpu.cu )
+  list(APPEND LIBRARIES "multiply_gpu")
+endif(WITH_CUDA)
 
-# # some example application
-# add_executable(multiply src/multiply.cc )
-# target_link_libraries(multiply LINK_PUBLIC ${LIBRARIES})
+# some example application
+add_executable(multiply src/multiply.cc )
+target_link_libraries(multiply LINK_PUBLIC ${LIBRARIES})
 
-# # all CPU tests
-# add_executable(test_cpu test/test_multiply.cc)
-# target_link_libraries(test_cpu ${GTEST_LIBRARIES} multiply_cpu pthread)
+# all CPU tests
+add_executable(test_cpu test/test_multiply.cc)
+target_link_libraries(test_cpu ${GTEST_LIBRARIES} multiply_cpu pthread)
 
-# add_test(TestCpu test_cpu)
+add_test(TestCpu test_cpu)
 
-# if(TEST_CUDA)
-#   cuda_add_executable(test_gpu test/test_multiply.cu)
-#   target_link_libraries(test_gpu ${GTEST_LIBRARIES} multiply_gpu pthread)
-#   add_test(TestGpu test_gpu)
-# endif(TEST_CUDA)
+if(TEST_CUDA)
+  cuda_add_executable(test_gpu test/test_multiply.cu)
+  target_link_libraries(test_gpu ${GTEST_LIBRARIES} multiply_gpu pthread)
+  add_test(TestGpu test_gpu)
+endif(TEST_CUDA)
 
 
 cuda_add_executable(sharedmemory src/sharedmemory.cu )

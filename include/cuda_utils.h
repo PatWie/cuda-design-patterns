@@ -153,14 +153,14 @@ float Benchmark(Kernel* kernel) {
  *
  *     run_kernel<<<grid, block, shm_size>>>(...)
  *
- *     T* s_shm = SharedMemory<T>();
+ *     T* s_shm = MixedSharedMemory<T>();
  *     T* s_el1 = (T*)&s_shm[0];
- *     T* s_el2 = (T*)&s_shm[10]; // or use MixedSharedMemory
+ *     T* s_el2 = (T*)&s_shm[10]; // or use cuda::SharedMemory
  *
  * @param rank in each dimensions.
  */
 template <typename T>
-__device__ T* SharedMemory() {
+__device__ T* MixedSharedMemory() {
   extern __shared__ __align__(sizeof(T)) unsigned char s_shm[];
   return reinterpret_cast<T*>(s_shm);
 }
@@ -169,7 +169,7 @@ __device__ T* SharedMemory() {
  * Extracting multiple values from shared memory of different types.
  *
  * Example:
- *    MixedSharedMemory shm;
+ *    SharedMemory shm;
  *    shm.add<float>(5);
  *    shm.add<int>(3);
  *    shm.add<float>(2);
@@ -178,31 +178,32 @@ __device__ T* SharedMemory() {
  *
  * and inside the CUDA kernel
  *
- *    MixedSharedMemory shm;
- *    float* shm_1 = shm.read<float>(5);
- *    int* shm_2 = shm.read<int>(3);
- *    float* shm_3 = shm.read<float>(2);
+ *    SharedMemory shm;
+ *    float* shm_1 = shm.ref<float>(5);
+ *    int* shm_2 = shm.ref<int>(3);
+ *    float* shm_3 = shm.ref<float>(2);
  */
-struct MixedSharedMemory {
+struct SharedMemory {
   int bytes = 0;
-  char** shm_anchor;
+  unsigned char* shm_anchor;
 
-  __host__ __device__ MixedSharedMemory() {
-#if defined(__CUDA_ARCH__)
-    extern __shared__ char* shm[];
+  __host__ __device__ SharedMemory() {
+#if __CUDA_ARCH__
+    // inside device code we can declare shared memory and refer to it
+    extern __shared__ unsigned char shm[];
     shm_anchor = shm;
-#endif
+#endif  // __CUDA_ARCH__
   }
 
   template <typename T>
-  __device__ T* read(int num) {
+  __device__ T* ref(int num) {
     T* ptr = reinterpret_cast<T*>(&shm_anchor[bytes]);
     bytes += num * sizeof(T);
     return ptr;
   }
 
   template <typename T>
-  __host__ __device__ void add(int num) {
+  __host__ void add(int num) {
     bytes += num * sizeof(T);
   }
 };
@@ -213,25 +214,39 @@ struct MixedSharedMemory {
 
 namespace cuda {
 
-struct EmptyInitializer {
-  template <class T>
-  void operator()(T* el) {}
+namespace {
+template <typename T>
+class HasLaunchMethod {
+ private:
+  typedef char yes[1];
+  typedef char no[2];
+
+  template <typename C>
+  static yes& verify(decltype(&C::Launch));
+  template <typename C>
+  static no& verify(...);
+
+ public:
+  enum { value = sizeof(verify<T>(0)) == sizeof(yes) };
 };
+
+};  // namespace
 
 /**
  * Dispatch template kernels according to a hyper parameter.
  *
  *   ExpertKernel<float, 4> kernelA;
  *   ExpertKernel<float, 8> kernelB;
- *   cuda::KernelDispatcher disp;
+ *   cuda::KernelDispatcher disp(false);
  *
- *   disp.Register<3>(kernelA); // for length up to 3 (inclusive) start kernelA
- *   disp.Register<6>(kernelB); // for length up to 6 (inclusive) start kernelB
+ *   disp.Register(3, kernelA); // for length up to 3 (inclusive) start kernelA
+ *   disp.Register(6, kernelB); // for length up to 6 (inclusive) start kernelB
  *
- *   int i = 6; // run-time variable
+ *   int i = 6;       // runtime variable
  *   disp.Run(i - 1); // launches kernelA
- *   disp.Run(i); // launches kernelB
- *   disp.Run(i + 1); // launches nothing
+ *   disp.Run(i);     // launches kernelB
+ *   disp.Run(i + 1); // triggers runtime exeception because of
+ *                    // `disp(false)`
  */
 template <typename KeyT = int, typename TComparator = std::less<KeyT>>
 class KernelDispatcher {
@@ -239,24 +254,31 @@ class KernelDispatcher {
   typedef std::map<KeyT, TLauncherFunc, TComparator> TLauncherFuncMap;
 
  public:
-  KernelDispatcher(bool extend = true) : extend(extend) {}
+  explicit KernelDispatcher(bool extend = true) : extend(extend) {}
 
   // register
   template <typename T>
   void Register(KeyT bound, T& kernel) {
+    static_assert(HasLaunchMethod<T>::value,
+                  "The kernel struct needs to have a 'Launch()' method! "
+                  "YOU_MADE_A_PROGAMMING_MISTAKE");
     Register(bound, [&]() { kernel.Launch(); });
   }
 
   // register and initialize
   template <typename T, typename Initializer>
-  void Register(KeyT bound, T& kernel, Initializer = EmptyInitializer()) {
-    Initializer()(&kernel);
-    Register(bound, [&]() { kernel.Launch(); });
+  void Register(KeyT bound, T* kernel, Initializer) {
+    static_assert(HasLaunchMethod<T>::value,
+                  "The kernel struct needs to have a 'Launch()' method! "
+                  "YOU_MADE_A_PROGAMMING_MISTAKE");
+    Initializer()(kernel);
+    Register(bound, [&]() { kernel->Launch(); });
   }
 
-  // would require C++14 to do
-  // disp.Register(3, kernelA, [&](auto& T){T.val = 42;});
-  //
+  // // would require C++14 to use
+  // //
+  // // auto init = [&](auto& T){T.val = 42;};
+  // // disp.Register(3, kernelA, init);
   // template <typename T>
   // void Register(KeyT bound, T& kernel, std::function<void(T&)> init) {
   //   init(kernel);
@@ -270,6 +292,7 @@ class KernelDispatcher {
         m_switchToVariant.lower_bound(hyper);
     if (detected_kernel == m_switchToVariant.end()) {
       if (extend) {
+        // Assume kernel with largest bound is the generic version.
         m_switchToVariant.rbegin()->second();
       } else {
         // const KeyT upper_bound = m_switchToVariant.rbegin()->first;
@@ -279,17 +302,18 @@ class KernelDispatcher {
             " the range of the last registered kernel.");
       }
     } else {
+      // Found registered kernel and will launch it.
       detected_kernel->second();
     }
   }
 
  private:
-  void Register(KeyT bound, TLauncherFunc kernel) {
-    m_switchToVariant[bound] = std::move(kernel);
+  void Register(KeyT bound, TLauncherFunc launch_func) {
+    m_switchToVariant[bound] = std::move(launch_func);
   }
 
   TLauncherFuncMap m_switchToVariant;
-  bool extend = true;
+  bool extend = true;  // if true kernel with largest bound will act as default
 };
 };  // namespace cuda
 

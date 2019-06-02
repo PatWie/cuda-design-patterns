@@ -55,16 +55,16 @@ Multiply<GPUDevice, float>::Apply(A, B, 2, 2, C);
 - Switching between different devices is obvious.
 - Understanding unit-tests which compare the output becomes more easy.
 
-## Mixed Shared Memory
+## Shared Memory
 
 [EXAMPLE](./src/sharedmemory.cu)
 
 Use
 
 ```cpp
-cuda::MixedSharedMemory shm;
-float* floats_5 = shm.read<float>(5);
-int* ints_3 = shm.read<int>(3);
+cuda::SharedMemory shm;
+float* floats_5 = shm.ref<float>(5);
+int* ints_3 = shm.ref<int>(3);
 ```
 
 instead of
@@ -103,12 +103,12 @@ ExpertKernel<float, 4> kernelA;
 ExpertKernel<float, 8> kernelB;
 
 cuda::KernelDispatcher<int> disp(true);
-disp.Register<3>(kernelA); // for length up to 3 (inclusive) start kernelA
-disp.Register<6>(kernelB); // for length up to 6 (inclusive) start kernelB
+disp.Register(3, kernelA); // for length up to 3 (inclusive) start kernelA
+disp.Register(6, kernelB); // for length up to 6 (inclusive) start kernelB
                            // as `disp(true)` this kernel will handle all
                            // larger values as well
-int i = 4; // some runtime values
-disp.Run(i);
+int i = 4; // a runtime value
+disp.Run(i); // triggers `kernelB`
 ```
 
 The dispatcher can also handle multi-dim values and a initializer
