@@ -82,7 +82,7 @@ struct MultiplyCUDAKernel : public cuda::Kernel {
   ValueT* C;
 };
 
-};  // anonymous namespace
+};  // namespace
 
 template <typename ValueT>
 struct Multiply<GPUDevice, ValueT> {

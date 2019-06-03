@@ -13,11 +13,11 @@ if(CUDA_FOUND)
     message(STATUS "Build tests for CUDA")
   endif(TEST_CUDA)
 
-  list(APPEND CMAKE_CXX_FLAGS "-DWITH_CUDA")
 
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWITH_CUDA ")
   include_directories(${CUDA_INCLUDE_DIRS})
 
-  set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -std=c++11 --expt-relaxed-constexpr -DWITH_CUDA")
+  set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -std=c++11 --expt-relaxed-constexpr -DWITH_CUDA ")
 
   # Xptxas dumps register usage
   if(SHOW_PTXAS)

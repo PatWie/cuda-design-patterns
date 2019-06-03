@@ -221,7 +221,7 @@ struct SharedMemory {
 
 namespace cuda {
 
-namespace {
+namespace impl {
 template <typename T>
 class HasLaunchMethod {
  private:
@@ -237,7 +237,7 @@ class HasLaunchMethod {
   enum { value = sizeof(verify<T>(0)) == sizeof(yes) };
 };
 
-};  // namespace
+};  // namespace impl
 
 /**
  * Dispatch template kernels according to a hyper parameter.
@@ -266,7 +266,7 @@ class KernelDispatcher {
   // register
   template <typename T>
   void Register(KeyT bound, T& kernel) {
-    static_assert(HasLaunchMethod<T>::value,
+    static_assert(impl::HasLaunchMethod<T>::value,
                   "The kernel struct needs to have a 'Launch()' method! "
                   "YOU_MADE_A_PROGAMMING_MISTAKE");
     Register(bound, [&]() { kernel.Launch(); });
@@ -275,7 +275,7 @@ class KernelDispatcher {
   // register and initialize
   template <typename T, typename Initializer>
   void Register(KeyT bound, T* kernel, Initializer initializer) {
-    static_assert(HasLaunchMethod<T>::value,
+    static_assert(impl::HasLaunchMethod<T>::value,
                   "The kernel struct needs to have a 'Launch()' method! "
                   "YOU_MADE_A_PROGAMMING_MISTAKE");
     initializer(kernel);

@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef LIB_MULTIPLY_H_
-#define LIB_MULTIPLY_H_
+#ifndef INCLUDE_MULTIPLY_MULTIPLY_H_
+#define INCLUDE_MULTIPLY_MULTIPLY_H_
 
 template <typename Device, typename ValueT>
 struct Multiply {
@@ -25,4 +25,4 @@ struct Multiply {
                     ValueT* C);
 };
 
-#endif  // LIB_MULTIPLY_H_
+#endif  // INCLUDE_MULTIPLY_MULTIPLY_H_

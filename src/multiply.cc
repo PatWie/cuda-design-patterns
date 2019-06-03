@@ -31,7 +31,7 @@ void print_mat(float *A, int H, int W) {
   printf("\n");
 }
 
-int main(int argc, char const *argv[]) {
+int main() {
   float *A = new float[2 * 2];
   float *B = new float[2 * 2];
   float *C = new float[2 * 2];

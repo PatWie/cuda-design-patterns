@@ -1,5 +1,7 @@
 # CUDA Design Patterns
 
+[![Build Status](https://ci.patwie.com/api/badges/PatWie/cuda-design-patterns/status.svg)](https://ci.patwie.com/PatWie/cuda-design-patterns)
+
 Some best practises I collected over the last years when writing CUDA kernels. These functions
 do not dictate how to use CUDA, these just simplify your workflow. I am not a big fan of libraries which rename things via wrappers. All code below does add additional benefits in CUDA programming.
 
@@ -78,7 +80,7 @@ int* val2 = reinterpret_cast<int*>(&shm[5]); // 3 ints
 
 **Reasons:**
 
-- The number of values of specific data types to read should be on the same line as the declaration. This way adding additional shared memory becomes easier during development. 
+- The number of values of specific data types to read should be on the same line as the declaration. This way adding additional shared memory becomes easier during development.
 
 ## CUDA Kernel Dispatcher
 
@@ -134,7 +136,7 @@ disp2.Register(std::make_tuple(9, 4), kernelB2d, init);
 
 ## CUDA Index Calculation
 
-[EXAMPLE](./src/deprecated_examples.cu)
+[EXAMPLE](./src/deprecated_examples.cu_old)
 
 Do not compute indicies by hand when appropriate and use
 

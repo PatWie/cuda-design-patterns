@@ -22,8 +22,8 @@
 
 template <typename ValueT>
 struct Multiply<CPUDevice, ValueT> {
-  static ValueT Apply(const ValueT* A, const ValueT* B, const int H,
-                      const int W, ValueT* C) {
+  static void Apply(const ValueT* A, const ValueT* B, const int H, const int W,
+                    ValueT* C) {
     for (int h = 0; h < H; ++h) {
       for (int w = 0; w < W; ++w) {
         C[h * W + w] = 0;

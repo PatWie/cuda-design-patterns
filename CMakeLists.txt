@@ -11,7 +11,7 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 find_package(GTest REQUIRED)
 include_directories(${GTEST_INCLUDE_DIRS})
 
-find_package(CUDA QUIET)
+find_package(CUDA)
 include(CudaHelper)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})

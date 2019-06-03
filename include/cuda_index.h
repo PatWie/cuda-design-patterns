@@ -54,8 +54,7 @@ struct pitch_helper<TRank, 0, TPos, 0> {
 template <size_t TRank, size_t TRemaining, class T, class... Ts>
 struct position_helper {
   constexpr size_t call(const size_t dimensions_[TRank], T v, Ts... is) const {
-    return v *
-               pitch_helper<TRank, TRank - TRemaining + 1, 0, TRank>().call(
+    return v * pitch_helper<TRank, TRank - TRemaining + 1, 0, TRank>().call(
                    dimensions_) +
            position_helper<TRank, TRemaining - 1, Ts...>().call(dimensions_,
                                                                 is...);
@@ -184,9 +183,8 @@ struct NdArray : public BaseNdIndex<TRank> {
 
  public:
   template <class... Ts>
-  explicit constexpr cuda_inline NdArray(T *data, size_t i0, Ts... is) noexcept
-      : BaseNdIndex<TRank>(i0, is...),
-        data_(data) {}
+  explicit constexpr cuda_inline NdArray(T* data, size_t i0, Ts... is) noexcept
+      : BaseNdIndex<TRank>(i0, is...), data_(data) {}
 
   /**
    * Returns value from given position if valid, else 0;

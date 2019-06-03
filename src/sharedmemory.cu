@@ -73,7 +73,7 @@ struct AddSharedMemoryCUDAKernel : public cuda::Kernel {
 };
 }  // namespace
 
-int main(int argc, char const* argv[]) {
+int main() {
   AddSharedMemoryCUDAKernel kernel;
   kernel.Launch();
   ASSERT_CUDA(cudaDeviceSynchronize());

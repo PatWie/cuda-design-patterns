@@ -103,18 +103,19 @@ struct Initializer {
   float val;
 };
 
-int main(int argc, char const* argv[]) {
+int main() {
   // We initialize these kernels using Initializer.
   // From c++14 on, we could use a lambda function.
+  // But for now, we need this workaround.
   Initializer init(42.f);
 
   cuda::KernelDispatcher<int> disp(true);
   ExpertKernel1D<float, 4> kernelA;
   ExpertKernel1D<float, 8> kernelB;
 
-  // for length up to 3 (inclusive) start kernelA
+  // Register the kernel "kernelA" for length up to 3 (inclusive).
   disp.Register(3, &kernelA, init);
-  // for length up to 6 (inclusive) start kernelB
+  // Register the kernel "kernelB" for length up to 6 (inclusive).
   disp.Register(6, &kernelB, init);
 
   for (int i = 0; i < 9; ++i) {
@@ -123,8 +124,7 @@ int main(int argc, char const* argv[]) {
     ASSERT_CUDA(cudaDeviceSynchronize());
   }
 
-  // custom hyper-parameters
-  // Before C++14 we cannot initialize these kernels automatically.
+  // Multi-dimensional hyper-parameters:
   ExpertKernel2D<float, 4, 3> kernelA2d;
   ExpertKernel2D<float, 8, 4> kernelB2d;
 

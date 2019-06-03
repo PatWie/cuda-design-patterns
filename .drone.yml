@@ -1,0 +1,36 @@
+---
+kind: pipeline
+name: default
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: format
+  pull: default
+  image: patwie/clang-format:latest
+  commands:
+    - ./.ci/check.sh
+
+- name: cpplint
+  pull: default
+  image: patwie/cpplint
+  commands:
+    - cpplint --recursive .
+
+- name: compile
+  image: patwie/cuda:latest
+  pull: default
+  commands:
+    - mkdir build
+    - cd build
+    - cmake ..
+    - make
+
+
+---
+kind: signature
+hmac: ef74636ec7ec22b5c34efefb261e247b31638a452c1734f830d686ff1146ff71
+
+...
