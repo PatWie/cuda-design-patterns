@@ -36,7 +36,7 @@ kernel.Launch();
 - This allows much better organization of used parameters. We recommend
 to write them at the end of the struct, such that when writing the CUDA kernel itself
 they are always visible.
-- These structs can contain or compute the launch configuration (grid, block, shm size) dependingnon the parameters.
+- These structs can contain or compute the launch configuration (grid, block, shm size) depending on the parameters.
 - Multiple kernel launches require less code, as we do not need to type out all parameters over and over again for a second or third launch.
 
 
@@ -198,3 +198,9 @@ make test
 -  Most CIs do not have a CUDA runtime installed. Whenever, `WITH_CUDA=ON` is activated the test code for CUDA will be also build.
 -  FindCuda might be more robust than a custom makefile.
 
+## NVPROF
+
+Use [nvprof2json](https://github.com/PatWie/nvprof2json) to visualize NVIDIA profiling outputs in Google Chrome Browser.
+
+**Reasons:**
+- *nvprof2json* has no dependencies compared to nvvp.
