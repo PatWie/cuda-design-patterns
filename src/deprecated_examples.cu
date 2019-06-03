@@ -20,7 +20,8 @@
 #include <stdlib.h>
 #include <algorithm>
 #include <iostream>
-#include "cuda_utils.h"
+
+#include "include/cuda_utils.h"
 
 /*
 nvcc examples.cu --expt-relaxed-constexpr -Xptxas="-v" -std=c++11 -o test
@@ -336,11 +337,11 @@ void run_matmul() {
   float *matC3 = new float[H * W];
 
   for (int i = 0; i < H * W; ++i) {
-    matA[i] = rand() / static_cast<float>(RAND_MAX);
-    matB[i] = rand() / static_cast<float>(RAND_MAX);
-    matC1[i] = rand() / static_cast<float>(RAND_MAX);
-    matC2[i] = rand() / static_cast<float>(RAND_MAX);
-    matC3[i] = rand() / static_cast<float>(RAND_MAX);
+    matA[i] = rand_r() / static_cast<float>(RAND_MAX);
+    matB[i] = rand_r() / static_cast<float>(RAND_MAX);
+    matC1[i] = rand_r() / static_cast<float>(RAND_MAX);
+    matC2[i] = rand_r() / static_cast<float>(RAND_MAX);
+    matC3[i] = rand_r() / static_cast<float>(RAND_MAX);
   }
 
   float *d_matA;

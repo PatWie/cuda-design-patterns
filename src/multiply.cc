@@ -15,11 +15,11 @@
  * Author: Patrick Wieschollek, <mail@patwie.com>, 2019
  *
  */
+#include "include/multiply/multiply.h"
 
-#include <cuda_runtime.h>
 #include <stdio.h>
 
-#include "multiply/multiply.h"
+#include "include/cuda_utils.h"
 
 void print_mat(float *A, int H, int W) {
   for (int h = 0; h < H; ++h) {

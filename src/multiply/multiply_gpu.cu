@@ -18,11 +18,10 @@
 
 #if __CUDACC__
 
-#include <iostream>
+#include "include/multiply/multiply.h"
 
-#include "cuda_index.h"
-#include "cuda_utils.h"
-#include "multiply/multiply.h"
+#include "include/cuda_index.h"
+#include "include/cuda_utils.h"
 
 namespace {
 
@@ -95,12 +94,13 @@ struct Multiply<GPUDevice, ValueT> {
     ValueT* d_B;
     ValueT* d_C;
 
-    CHECK_CUDA(cudaMalloc((void**)&d_A, num_bytes));
-    CHECK_CUDA(cudaMalloc((void**)&d_B, num_bytes));
-    CHECK_CUDA(cudaMalloc((void**)&d_C, num_bytes));
+    ASSERT_CUDA(cudaMalloc(reinterpret_cast<void**>(&d_A), num_bytes));
+    ASSERT_CUDA(cudaMalloc(reinterpret_cast<void**>(&d_B), num_bytes));
+    ASSERT_CUDA(cudaMalloc(reinterpret_cast<void**>(&d_C), num_bytes));
 
-    CHECK_CUDA(cudaMemcpy(d_A, A, num_bytes, cudaMemcpyHostToDevice));
-    CHECK_CUDA(cudaMemcpy(d_B, B, num_bytes, cudaMemcpyHostToDevice));
+    // ASSERT_CUDA(cudaMemcpy(C, d_A, num_bytes*100, cudaMemcpyHostToDevice));
+    ASSERT_CUDA(cudaMemcpy(d_A, A, num_bytes, cudaMemcpyHostToDevice));
+    ASSERT_CUDA(cudaMemcpy(d_B, B, num_bytes, cudaMemcpyHostToDevice));
 
     MultiplyCUDAKernel<ValueT, 32> kernel;
     kernel.H = H;
@@ -109,9 +109,9 @@ struct Multiply<GPUDevice, ValueT> {
     kernel.B = d_B;
     kernel.C = d_C;
     kernel.Launch();
-    CHECK_CUDA(cudaDeviceSynchronize());
+    ASSERT_CUDA(cudaDeviceSynchronize());
 
-    CHECK_CUDA(cudaMemcpy(C, d_C, num_bytes, cudaMemcpyDeviceToHost));
+    ASSERT_CUDA(cudaMemcpy(C, d_C, num_bytes, cudaMemcpyDeviceToHost));
 
     // needed to wait for CUDA kernel output
     // std::cout << cuda::Benchmark(&kernel) << std::endl;

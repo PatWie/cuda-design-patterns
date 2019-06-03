@@ -16,8 +16,9 @@
  *
  */
 
-#include "multiply/multiply.h"
-#include <iostream>
+#include "include/multiply/multiply.h"
+
+#include "include/cuda_utils.h"
 
 template <typename ValueT>
 struct Multiply<CPUDevice, ValueT> {

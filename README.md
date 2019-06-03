@@ -181,9 +181,12 @@ __global__ void readme_normal(float *src, float *dst,
 **Description:**
 Use CMake to configure which targets should be build. By default set `TEST_CUDA=ON` and `WITH_CUDA=OFF`.
 The workflow (for this repository) is:
+
 ```bash
 mkdir build && cd build
-cmake .. -DWITH_CUDA=ON -DTEST_CUDA=ON
+cmake -DCMAKE_BUILD_TYPE=Release ..
+# or more specific
+cmake -DCMAKE_BUILD_TYPE=Release -DTEST_CUDA=ON -DCUDA_ARCH="52 60" ..
 make
 make test
 ```

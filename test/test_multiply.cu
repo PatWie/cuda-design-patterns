@@ -17,7 +17,8 @@
  */
 
 #include "gtest/gtest.h"
-#include "multiply/multiply.h"
+#include "include/cuda_utils.h"
+#include "include/multiply/multiply.h"
 
 namespace {
 

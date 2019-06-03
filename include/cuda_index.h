@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef LIB_CUDA_INDEX_H_
-#define LIB_CUDA_INDEX_H_
+#ifndef INCLUDE_CUDA_INDEX_H_
+#define INCLUDE_CUDA_INDEX_H_
 
 #if __CUDACC__
 
@@ -284,4 +284,4 @@ cuda_inline auto make_ndarray(T* arr, size_t N0, Ts... Ns)
 
 #endif  // __CUDACC__
 
-#endif  // LIB_CUDA_INDEX_H_
+#endif  // INCLUDE_CUDA_INDEX_H_

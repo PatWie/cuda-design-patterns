@@ -19,8 +19,6 @@
 #ifndef LIB_MULTIPLY_H_
 #define LIB_MULTIPLY_H_
 
-#include "cuda_utils.h"
-
 template <typename Device, typename ValueT>
 struct Multiply {
   static void Apply(const ValueT* A, const ValueT* B, const int H, const int W,

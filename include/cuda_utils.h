@@ -1,5 +1,5 @@
-#ifndef LIB_CUDA_UTILS_H_
-#define LIB_CUDA_UTILS_H_
+#ifndef INCLUDE_CUDA_UTILS_H_
+#define INCLUDE_CUDA_UTILS_H_
 
 /* Copyright 2018 Authors. All Rights Reserved.
 
@@ -20,9 +20,11 @@
  *
  */
 
+#include <stdio.h>
 #include <functional>
 #include <map>
 #include <memory>
+#include <utility>
 
 // Template parameter for compile-time cuda drop-in replacements of cpu
 // functions.
@@ -45,12 +47,16 @@ struct GPUDevice {
  * Example:
  *    Mykernel kernel;
  *    kernel.Launch();
- *    CHECK_CUDA(cudaDeviceSynchronize());
+ *    ASSERT_CUDA(cudaDeviceSynchronize());
  *
  * @param  ans is a function that returns a cudaError_t
  * taken from: https://stackoverflow.com/a/14038590
  */
-#define CHECK_CUDA(ans) \
+#if NDEBUG
+// disable assert in production code
+#define ASSERT_CUDA(ans) ((void)ans)
+#else  // NDEBUG
+#define ASSERT_CUDA(ans) \
   { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert(cudaError_t code, const char* file, int line,
                       bool abort = true) {
@@ -60,6 +66,7 @@ inline void gpuAssert(cudaError_t code, const char* file, int line,
     if (abort) exit(code);
   }
 }
+#endif  // NDEBUG
 
 namespace cuda {
 
@@ -134,8 +141,8 @@ float Benchmark(Kernel* kernel) {
   cudaEventRecord(stop);
 
   // This stall the GPU execution pipeline and should not be used in production.
-  CHECK_CUDA(cudaPeekAtLastError());
-  CHECK_CUDA(cudaDeviceSynchronize());
+  ASSERT_CUDA(cudaPeekAtLastError());
+  ASSERT_CUDA(cudaDeviceSynchronize());
 
   cudaEventSynchronize(stop);
 
@@ -267,11 +274,11 @@ class KernelDispatcher {
 
   // register and initialize
   template <typename T, typename Initializer>
-  void Register(KeyT bound, T* kernel, Initializer) {
+  void Register(KeyT bound, T* kernel, Initializer initializer) {
     static_assert(HasLaunchMethod<T>::value,
                   "The kernel struct needs to have a 'Launch()' method! "
                   "YOU_MADE_A_PROGAMMING_MISTAKE");
-    Initializer()(kernel);
+    initializer(kernel);
     Register(bound, [&]() { kernel->Launch(); });
   }
 
@@ -289,13 +296,13 @@ class KernelDispatcher {
 
   void Run(KeyT hyper) {
     typename TLauncherFuncMap::iterator detected_kernel =
-        m_switchToVariant.lower_bound(hyper);
-    if (detected_kernel == m_switchToVariant.end()) {
+        kernels_.lower_bound(hyper);
+    if (detected_kernel == kernels_.end()) {
       if (extend) {
         // Assume kernel with largest bound is the generic version.
-        m_switchToVariant.rbegin()->second();
+        kernels_.rbegin()->second();
       } else {
-        // const KeyT upper_bound = m_switchToVariant.rbegin()->first;
+        // const KeyT upper_bound = kernels_.rbegin()->first;
         throw std::runtime_error(
             "KernelDispatcher has no kernels registered for the parameter "
             "requested by the runtime. Use 'KernelDispatcher(true)' to extend"
@@ -309,12 +316,12 @@ class KernelDispatcher {
 
  private:
   void Register(KeyT bound, TLauncherFunc launch_func) {
-    m_switchToVariant[bound] = std::move(launch_func);
+    kernels_[bound] = std::move(launch_func);
   }
 
-  TLauncherFuncMap m_switchToVariant;
+  TLauncherFuncMap kernels_;
   bool extend = true;  // if true kernel with largest bound will act as default
 };
 };  // namespace cuda
 
-#endif  // LIB_CUDA_UTILS_H_
+#endif  // INCLUDE_CUDA_UTILS_H_

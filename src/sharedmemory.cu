@@ -20,8 +20,8 @@
 
 #include <iostream>
 
-#include "cuda_index.h"
-#include "cuda_utils.h"
+#include "include/cuda_index.h"
+#include "include/cuda_utils.h"
 
 namespace {
 
@@ -76,7 +76,7 @@ struct AddSharedMemoryCUDAKernel : public cuda::Kernel {
 int main(int argc, char const* argv[]) {
   AddSharedMemoryCUDAKernel kernel;
   kernel.Launch();
-  CHECK_CUDA(cudaDeviceSynchronize());
+  ASSERT_CUDA(cudaDeviceSynchronize());
   return 0;
 }
 

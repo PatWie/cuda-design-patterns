@@ -16,7 +16,7 @@
  *
  */
 
-#include "cuda_utils.h"
+#include "include/cuda_utils.h"
 
 namespace {
 
@@ -93,16 +93,20 @@ struct ExpertKernel2D<ValueT, 4, 3> : public cuda::Kernel {
 
 // Workaround to initialize all kernels for the dispatcher.
 struct Initializer {
+  explicit Initializer(float val) : val(val) {}
+
   template <typename TKernel>
   void operator()(TKernel* kernel) {
-    kernel->val = 42.f;
+    kernel->val = val;
   }
+
+  float val;
 };
 
 int main(int argc, char const* argv[]) {
   // We initialize these kernels using Initializer.
   // From c++14 on, we could use a lambda function.
-  Initializer init;
+  Initializer init(42.f);
 
   cuda::KernelDispatcher<int> disp(true);
   ExpertKernel1D<float, 4> kernelA;
@@ -116,7 +120,7 @@ int main(int argc, char const* argv[]) {
   for (int i = 0; i < 9; ++i) {
     printf("%d : \n", i);
     disp.Run(i);
-    CHECK_CUDA(cudaDeviceSynchronize());
+    ASSERT_CUDA(cudaDeviceSynchronize());
   }
 
   // custom hyper-parameters
@@ -132,7 +136,7 @@ int main(int argc, char const* argv[]) {
     for (int j = 0; j < 5; ++j) {
       printf("i: %d j %d\n", i, j);
       disp2.Run(std::make_tuple(i, j));
-      CHECK_CUDA(cudaDeviceSynchronize());
+      ASSERT_CUDA(cudaDeviceSynchronize());
     }
   }
 
