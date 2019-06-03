@@ -198,9 +198,6 @@ make test
 -  Most CIs do not have a CUDA runtime installed. Whenever, `WITH_CUDA=ON` is activated the test code for CUDA will be also build.
 -  FindCuda might be more robust than a custom makefile.
 
-## NVPROF
-
-Use [nvprof2json](https://github.com/PatWie/nvprof2json) to visualize NVIDIA profiling outputs in Google Chrome Browser.
-
-**Reasons:**
-- *nvprof2json* has no dependencies compared to nvvp.
+## Tools
+- [online CUDA calculator](http://cuda.patwie.com/) instead of the NVIDIA Excel-sheet
+- [nvprof2json](https://github.com/PatWie/nvprof2json) to visualize NVIDIA profiling outputs in Google Chrome Browser (no dependencies compared to NVIDIA nvvp)
