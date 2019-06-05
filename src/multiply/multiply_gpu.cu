@@ -98,7 +98,6 @@ struct Multiply<GPUDevice, ValueT> {
     ASSERT_CUDA(cudaMalloc(reinterpret_cast<void**>(&d_B), num_bytes));
     ASSERT_CUDA(cudaMalloc(reinterpret_cast<void**>(&d_C), num_bytes));
 
-    // ASSERT_CUDA(cudaMemcpy(C, d_A, num_bytes*100, cudaMemcpyHostToDevice));
     ASSERT_CUDA(cudaMemcpy(d_A, A, num_bytes, cudaMemcpyHostToDevice));
     ASSERT_CUDA(cudaMemcpy(d_B, B, num_bytes, cudaMemcpyHostToDevice));
 

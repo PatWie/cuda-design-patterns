@@ -28,9 +28,14 @@ steps:
     - cmake ..
     - make
 
+- name: test
+  image: patwie/cuda:latest
+  pull: never
+  commands:
+    - ./build/test_cpu
 
 ---
 kind: signature
-hmac: 8fdd8848540fde43d3dbe6c4e4b751bcb77965f10d73d37a4ba7aa85c4bd1a1b
+hmac: dfdc7bd25d4cd1be5a2cd66aafe0051ed7cfb00971fa169d08d799731e8a0952
 
 ...

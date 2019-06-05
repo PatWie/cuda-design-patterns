@@ -26,6 +26,29 @@ namespace {
 
 TEST(MultiplyTest, ExtraGpuTest) { EXPECT_TRUE(true); }
 
+TEST(MultiplyTest, GpuMatchCpu) {
+  constexpr int M = 50;
+  float *A = new float[M * M];
+  float *B = new float[M * M];
+  float *expected = new float[M * M];
+  float *actual = new float[M * M];
+
+  for (int i = 0; i < 2 * 2; ++i) {
+    A[i] = i;
+    B[i] = i - 5;
+    expected[i] = 0;
+    expected[i] = 0;
+  }
+
+  Multiply<CPUDevice, float>::Apply(A, B, M, M, expected);
+  Multiply<GPUDevice, float>::Apply(A, B, M, M, actual);
+
+  for (int i = 0; i < M * M; ++i) {
+    EXPECT_NEAR(expected[i], actual[i], 1e-8);
+    break;
+  }
+}
+
 }  // namespace
 
 int main(int argc, char **argv) {
