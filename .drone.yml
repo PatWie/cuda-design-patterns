@@ -8,20 +8,20 @@ platform:
 
 steps:
 - name: format
-  pull: default
+  pull: never
   image: patwie/clang-format:latest
   commands:
     - ./.ci/check.sh
 
 - name: cpplint
-  pull: default
-  image: patwie/cpplint
+  pull: never
+  image: patwie/cpplint:latest
   commands:
     - cpplint --recursive .
 
 - name: compile
   image: patwie/cuda:latest
-  pull: default
+  pull: never
   commands:
     - mkdir build
     - cd build
@@ -31,6 +31,6 @@ steps:
 
 ---
 kind: signature
-hmac: ef74636ec7ec22b5c34efefb261e247b31638a452c1734f830d686ff1146ff71
+hmac: 8fdd8848540fde43d3dbe6c4e4b751bcb77965f10d73d37a4ba7aa85c4bd1a1b
 
 ...

@@ -16,70 +16,19 @@
  *
  */
 
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "include/cuda_utils.h"
 #include "include/multiply/multiply.h"
+#include "test/test_multiply_impl.h"
 
 namespace {
 
-TEST(MultiplyTest, TestGpuIdentity) {
-  float *A = new float[2 * 2];
-  float *B = new float[2 * 2];
-  float *expected = new float[2 * 2];
-
-  for (int i = 0; i < 2 * 2; ++i) {
-    A[i] = i;
-    B[i] = 0;
-    expected[i] = i;
-  }
-  B[0] = 1;
-  B[3] = 1;
-
-  float *actual = new float[2 * 2];
-
-  Multiply<GPUDevice, float>::Apply(A, B, 2, 2, actual);
-  Multiply<GPUDevice, float>::Apply(A, B, 2, 2, actual);
-  Multiply<GPUDevice, float>::Apply(A, B, 2, 2, actual);
-  Multiply<GPUDevice, float>::Apply(A, B, 2, 2, actual);
-
-  for (int i = 0; i < 2 * 2; ++i) {
-    EXPECT_EQ(expected[i], actual[i]);
-  }
-}
-
-TEST(MultiplyTest, TestGpuSquare) {
-  float *A = new float[3 * 3];
-  float *B = new float[3 * 3];
-  float *expected = new float[3 * 3];
-
-  for (int i = 0; i < 3 * 3; ++i) {
-    A[i] = i;
-    B[i] = i;
-  }
-  expected[0] = 15;
-  expected[1] = 18;
-  expected[2] = 21;
-  expected[3] = 42;
-  expected[4] = 54;
-  expected[5] = 66;
-  expected[6] = 69;
-  expected[7] = 90;
-  expected[8] = 111;
-
-  float *actual = new float[3 * 3];
-
-  Multiply<GPUDevice, float>::Apply(A, B, 3, 3, actual);
-  Multiply<GPUDevice, float>::Apply(A, B, 3, 3, actual);
-  Multiply<GPUDevice, float>::Apply(A, B, 3, 3, actual);
-
-  for (int i = 0; i < 3 * 3; ++i) {
-    EXPECT_EQ(expected[i], actual[i]);
-  }
-}
+TEST(MultiplyTest, ExtraGpuTest) { EXPECT_TRUE(true); }
 
 }  // namespace
 
 int main(int argc, char **argv) {
-  testing::InitGoogleTest(&argc, argv);
+  ::testing::InitGoogleMock(&argc, argv);
   return RUN_ALL_TESTS();
 }

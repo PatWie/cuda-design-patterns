@@ -10,9 +10,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   xz-utils \
   build-essential \
   libgtest-dev \
-  curl && \
-  rm -rf /var/lib/apt/lists/*
+  curl \
+  unzip
 
-RUN cd /usr/src/gtest && cmake CMakeLists.txt && make && cp *.a /usr/lib
+RUN mkdir /google && cd /google && \
+  curl https://github.com/google/googletest/archive/master.zip -O -J -L && \
+  unzip googletest-master.zip  && \
+  mv googletest-master src  && \
+  rm googletest-master.zip  && \
+  mkdir build && \
+  mkdir dist && \
+  cd build && \
+  cmake ../src -DCMAKE_INSTALL_PREFIX=/google/dist && \
+  make install
 
+ENV GTEST_ROOT /google/dist
 ENV LIBRARY_PATH /usr/local/cuda/lib64/stubs

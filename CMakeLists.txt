@@ -31,13 +31,16 @@ add_executable(multiply src/multiply.cc )
 target_link_libraries(multiply LINK_PUBLIC ${LIBRARIES})
 
 # TESTS
+# TODO(): find a more robust way to link gmock, see docker file for setup
+# This currently assumes gmock.a is next to gtest.a
+link_directories($ENV{GTEST_ROOT}/lib)
 add_executable(test_cpu test/test_multiply.cc)
-target_link_libraries(test_cpu ${GTEST_LIBRARIES} multiply_cpu pthread)
+target_link_libraries(test_cpu ${GTEST_LIBRARIES} gmock ${LIBRARIES} pthread)
 
 add_test(TestCpu test_cpu)
 
 if(TEST_CUDA)
   cuda_add_executable(test_gpu test/test_multiply.cu)
-  target_link_libraries(test_gpu ${GTEST_LIBRARIES} multiply_gpu pthread)
+  target_link_libraries(test_gpu ${GTEST_LIBRARIES} gmock ${LIBRARIES} pthread)
   add_test(TestGpu test_gpu)
 endif(TEST_CUDA)
