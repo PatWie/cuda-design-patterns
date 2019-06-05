@@ -265,11 +265,11 @@ class KernelDispatcher {
 
   // register
   template <typename T>
-  void Register(KeyT bound, T& kernel) {
+  void Register(KeyT bound, T* kernel) {
     static_assert(impl::HasLaunchMethod<T>::value,
                   "The kernel struct needs to have a 'Launch()' method! "
                   "YOU_MADE_A_PROGAMMING_MISTAKE");
-    Register(bound, [&]() { kernel.Launch(); });
+    Register(bound, [&]() { kernel->Launch(); });
   }
 
   // register and initialize
@@ -315,8 +315,8 @@ class KernelDispatcher {
   }
 
  private:
-  void Register(KeyT bound, TLauncherFunc launch_func) {
-    kernels_[bound] = std::move(launch_func);
+  void Register(KeyT bound, TLauncherFunc&& launch_func) {
+    kernels_[bound] = std::forward<TLauncherFunc>(launch_func);
   }
 
   TLauncherFuncMap kernels_;
