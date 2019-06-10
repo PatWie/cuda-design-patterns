@@ -40,12 +40,11 @@ TEST(MultiplyTest, GpuMatchCpu) {
     expected[i] = 0;
   }
 
-  Multiply<CpuDevice, float>::Apply(A, B, M, M, expected);
-  Multiply<GpuDevice, float>::Apply(A, B, M, M, actual);
+  Multiply<float, CpuDevice>::Apply(A, B, M, M, expected);
+  Multiply<float, GpuDevice>::Apply(A, B, M, M, actual);
 
   for (int i = 0; i < M * M; ++i) {
     EXPECT_NEAR(expected[i], actual[i], 1e-8);
-    break;
   }
 }
 

@@ -20,17 +20,17 @@
 #include "include/cuda_utils.h"
 
 template <typename ValueT>
-struct Multiply<XpuDevice, ValueT> {
+struct Multiply<ValueT> {
   static void Apply(const ValueT* A, const ValueT* B, const int H, const int W,
                     ValueT* C) {
 #if __CUDACC__
-    Multiply<GpuDevice, ValueT>::Apply(A, B, H, W, C);
+    Multiply<ValueT, GpuDevice>::Apply(A, B, H, W, C);
 #else   // __CUDACC__
-    Multiply<CpuDevice, ValueT>::Apply(A, B, H, W, C);
+    Multiply<ValueT, CpuDevice>::Apply(A, B, H, W, C);
 #endif  // __CUDACC__
   }
 };
 
-template struct Multiply<XpuDevice, double>;
-template struct Multiply<XpuDevice, float>;
-template struct Multiply<XpuDevice, int>;
+template struct Multiply<double>;
+template struct Multiply<float>;
+template struct Multiply<int>;

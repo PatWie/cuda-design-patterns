@@ -46,7 +46,8 @@ int main() {
 
   // ...........................................................................
   printf("Cpu output\n");
-  Multiply<CpuDevice, float>::Apply(A, B, 2, 2, C);
+  // run on CPU
+  Multiply<float, CpuDevice>::Apply(A, B, 2, 2, C);
   print_mat(C, 2, 2);
 
 // ...........................................................................
@@ -56,7 +57,8 @@ int main() {
     C[i] = 0;
   }
 
-  Multiply<GpuDevice, float>::Apply(A, B, 2, 2, C);
+  // run on GPU
+  Multiply<float, GpuDevice>::Apply(A, B, 2, 2, C);
 
   print_mat(C, 2, 2);
 #endif
@@ -66,7 +68,8 @@ int main() {
   for (int i = 0; i < 2 * 2; ++i) {
     C[i] = 0;
   }
-  Multiply<XpuDevice, float>::Apply(A, B, 2, 2, C);
+  // run on GPU if available else run on CPU
+  Multiply<float>::Apply(A, B, 2, 2, C);
 
   print_mat(C, 2, 2);
 

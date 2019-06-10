@@ -41,7 +41,7 @@ TYPED_TEST_P(MultiplyTest, TestIdentity) {
 
   float *actual = new float[2 * 2];
 
-  Multiply<TypeParam, float>::Apply(A, B, 2, 2, actual);
+  Multiply<float, TypeParam>::Apply(A, B, 2, 2, actual);
 
   for (int i = 0; i < 2 * 2; ++i) {
     EXPECT_EQ(expected[i], actual[i]);
@@ -69,7 +69,7 @@ TYPED_TEST_P(MultiplyTest, TestSquare) {
 
   float *actual = new float[3 * 3];
 
-  Multiply<TypeParam, float>::Apply(A, B, 3, 3, actual);
+  Multiply<float, TypeParam>::Apply(A, B, 3, 3, actual);
 
   for (int i = 0; i < 3 * 3; ++i) {
     EXPECT_EQ(expected[i], actual[i]);
