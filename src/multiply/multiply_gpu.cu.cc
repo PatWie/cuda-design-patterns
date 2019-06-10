@@ -85,7 +85,7 @@ struct MultiplyCUDAKernel : public cuda::Kernel {
 };  // namespace
 
 template <typename ValueT>
-struct Multiply<GPUDevice, ValueT> {
+struct Multiply<GpuDevice, ValueT> {
   static void Apply(const ValueT* A, const ValueT* B, const int H, const int W,
                     ValueT* C) {
     const int num_bytes = H * W * sizeof(ValueT);
@@ -117,7 +117,8 @@ struct Multiply<GPUDevice, ValueT> {
   }
 };
 
-template struct Multiply<GPUDevice, float>;
-template struct Multiply<GPUDevice, int>;
+template struct Multiply<GpuDevice, double>;
+template struct Multiply<GpuDevice, float>;
+template struct Multiply<GpuDevice, int>;
 
 #endif  // __CUDACC__

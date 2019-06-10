@@ -40,14 +40,17 @@ TEST(MultiplyTest, GpuMatchCpu) {
     expected[i] = 0;
   }
 
-  Multiply<CPUDevice, float>::Apply(A, B, M, M, expected);
-  Multiply<GPUDevice, float>::Apply(A, B, M, M, actual);
+  Multiply<CpuDevice, float>::Apply(A, B, M, M, expected);
+  Multiply<GpuDevice, float>::Apply(A, B, M, M, actual);
 
   for (int i = 0; i < M * M; ++i) {
     EXPECT_NEAR(expected[i], actual[i], 1e-8);
     break;
   }
 }
+
+using Devices = ::testing::Types<GpuDevice>;
+INSTANTIATE_TYPED_TEST_SUITE_P(Example, MultiplyTest, Devices);
 
 }  // namespace
 

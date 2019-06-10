@@ -16,15 +16,15 @@ include(CudaHelper)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-add_library(multiply_cpu SHARED src/multiply/multiply_cpu.cc )
+add_library(multiply_cpu SHARED src/multiply/multiply_cpu.cc src/multiply/multiply.cc )
 list(APPEND LIBRARIES "multiply_cpu")
 
 if(CUDA_FOUND)
-  cuda_add_library(multiply_gpu SHARED src/multiply/multiply_gpu.cu )
+  cuda_add_library(multiply_gpu SHARED src/multiply/multiply_gpu.cu.cc src/multiply/multiply.cc )
   list(APPEND LIBRARIES "multiply_gpu")
 
-  cuda_add_executable(sharedmemory src/sharedmemory.cu )
-  cuda_add_executable(tune src/tune.cu )
+  cuda_add_executable(sharedmemory src/sharedmemory.cu.cc )
+  cuda_add_executable(tune src/tune.cu.cc )
 endif(CUDA_FOUND)
 
 add_executable(multiply src/multiply.cc )
@@ -40,7 +40,7 @@ target_link_libraries(test_cpu ${GTEST_LIBRARIES} gmock ${LIBRARIES} pthread)
 add_test(TestCpu test_cpu)
 
 if(TEST_CUDA)
-  cuda_add_executable(test_gpu test/test_multiply.cu)
+  cuda_add_executable(test_gpu test/test_multiply.cu.cc)
   target_link_libraries(test_gpu ${GTEST_LIBRARIES} gmock ${LIBRARIES} pthread)
   add_test(TestGpu test_gpu)
 endif(TEST_CUDA)

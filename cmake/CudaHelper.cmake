@@ -2,6 +2,12 @@ OPTION(TEST_CUDA "Build Tests for CUDA" ON)
 OPTION(SHOW_PTXAS "Build Tests for CUDA" ON)
 set(CUDA_ARCH "" CACHE STRING "Target CUDA Architectures multiple are allowed")
 
+# We use *.cu.cc as the default as most tool do not understand cu as CUDA.
+file(GLOB_RECURSE source_list "*.cu.cc")
+foreach(child ${source_list})
+  set_source_files_properties(${child} PROPERTIES CUDA_SOURCE_PROPERTY_FORMAT OBJ)
+endforeach()
+
 
 # CUDA not available
 if(CUDA_FOUND)

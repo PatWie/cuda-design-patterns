@@ -26,6 +26,9 @@ namespace {
 
 TEST(MultiplyTest, ExtraCpuTest) { EXPECT_TRUE(true); }
 
+using Devices = ::testing::Types<CpuDevice>;
+INSTANTIATE_TYPED_TEST_SUITE_P(Example, MultiplyTest, Devices);
+
 }  // namespace
 
 int main(int argc, char **argv) {

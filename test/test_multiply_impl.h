@@ -79,15 +79,5 @@ TYPED_TEST_P(MultiplyTest, TestSquare) {
 REGISTER_TYPED_TEST_SUITE_P(MultiplyTest,  //
                             TestIdentity, TestSquare);
 
-#if __CUDACC__
-typedef ::testing::Types<CPUDevice, GPUDevice> Devices;
-#else   // __CUDACC__
-typedef ::testing::Types<CPUDevice> Devices;
-#endif  // __CUDACC__
-
-INSTANTIATE_TYPED_TEST_SUITE_P(Example,       // Instance name
-                               MultiplyTest,  // Test case name
-                               Devices);      // Type list
-
 #endif  // GTEST_HAS_TYPED_TEST_P
 #endif  // TEST_TEST_MULTIPLY_IMPL_H_

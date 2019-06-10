@@ -28,12 +28,16 @@
 
 // Template parameter for compile-time cuda drop-in replacements of cpu
 // functions.
-struct CPUDevice {
-  static const bool cpu_device = true;
+struct CpuDevice {
+  static const int device_id = 1;
 };
 
-struct GPUDevice {
-  static const bool cpu_device = false;
+struct GpuDevice {
+  static const int device_id = 2;
+};
+
+struct XpuDevice {
+  static const int device_id = 0;
 };
 
 #if __CUDACC__

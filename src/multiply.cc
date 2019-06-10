@@ -44,20 +44,31 @@ int main() {
   print_mat(A, 2, 2);
   print_mat(B, 2, 2);
 
-  printf("CPU output\n");
-  Multiply<CPUDevice, float>::Apply(A, B, 2, 2, C);
+  // ...........................................................................
+  printf("Cpu output\n");
+  Multiply<CpuDevice, float>::Apply(A, B, 2, 2, C);
   print_mat(C, 2, 2);
 
+// ...........................................................................
 #if WITH_CUDA
-  printf("GPU output\n");
+  printf("Gpu output\n");
   for (int i = 0; i < 2 * 2; ++i) {
     C[i] = 0;
   }
 
-  Multiply<GPUDevice, float>::Apply(A, B, 2, 2, C);
+  Multiply<GpuDevice, float>::Apply(A, B, 2, 2, C);
 
   print_mat(C, 2, 2);
 #endif
+
+  // ...........................................................................
+  printf("auto output\n");
+  for (int i = 0; i < 2 * 2; ++i) {
+    C[i] = 0;
+  }
+  Multiply<XpuDevice, float>::Apply(A, B, 2, 2, C);
+
+  print_mat(C, 2, 2);
 
   return 0;
 }
