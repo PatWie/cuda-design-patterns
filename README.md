@@ -7,7 +7,7 @@ do not dictate how to use CUDA, these just simplify your workflow. I am not a bi
 
 ## CUDA Boilerplate Code
 
-[EXAMPLE](./src/multiply/multiply_gpu.cu)
+[EXAMPLE](./src/multiply/multiply_gpu.cu.cc)
 
 **Description:**
 Avoid plain a CUDA kernel functions and instead pack them into a struct.
@@ -48,8 +48,9 @@ they are always visible.
 Use templated `structs` to switch seemlessly between CPU and GPU code:
 
 ```cpp
-Multiply<CPUDevice, float>::Apply(A, B, 2, 2, C);
-Multiply<GPUDevice, float>::Apply(A, B, 2, 2, C);
+Multiply<float, CpuDevice>::Apply(A, B, 2, 2, C); // run CPU
+Multiply<float, GpuDevice>::Apply(A, B, 2, 2, C); // run GPU
+Multiply<float>::Apply(A, B, 2, 2, C); // run GPU if available else on CPU
 ```
 
 **Reasons:**
@@ -59,7 +60,7 @@ Multiply<GPUDevice, float>::Apply(A, B, 2, 2, C);
 
 ## Shared Memory
 
-[EXAMPLE](./src/sharedmemory.cu)
+[EXAMPLE](./src/sharedmemory.cu.cc)
 
 Use
 
@@ -84,7 +85,7 @@ int* val2 = reinterpret_cast<int*>(&shm[5]); // 3 ints
 
 ## CUDA Kernel Dispatcher
 
-[EXAMPLE](./src/tune.cu)
+[EXAMPLE](./src/tune.cu.cc)
 
 As in the *CUDA Boilerplate Code* example we pack our kernels into structs. For different hyper-parameters we use template specialization.
 
