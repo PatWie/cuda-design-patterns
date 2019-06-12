@@ -16,10 +16,16 @@
  *
  */
 
-#ifndef TEST_TEST_MULTIPLY_IMPL_H_
-#define TEST_TEST_MULTIPLY_IMPL_H_
+#ifndef INCLUDE_TEST_MULTIPLY_H_
+#define INCLUDE_TEST_MULTIPLY_H_
+
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 #if GTEST_HAS_TYPED_TEST_P
+
+#include "include/cuda_utils.h"
+#include "include/multiply/multiply.h"
 
 template <class T>
 class MultiplyTest : public testing::Test {};
@@ -80,4 +86,5 @@ REGISTER_TYPED_TEST_SUITE_P(MultiplyTest,  //
                             TestIdentity, TestSquare);
 
 #endif  // GTEST_HAS_TYPED_TEST_P
-#endif  // TEST_TEST_MULTIPLY_IMPL_H_
+
+#endif  // INCLUDE_TEST_MULTIPLY_H_

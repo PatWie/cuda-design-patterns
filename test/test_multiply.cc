@@ -16,11 +16,12 @@
  *
  */
 
+#include "include/test/multiply.h"
+
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "include/cuda_utils.h"
 #include "include/multiply/multiply.h"
-#include "test/test_multiply_impl.h"
 
 namespace {
 
