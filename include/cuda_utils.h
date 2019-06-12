@@ -36,7 +36,7 @@ struct GpuDevice {
   static const int device_id = 2;
 };
 
-struct XpuDevice {
+struct AnyDevice {
   static const int device_id = 0;
 };
 

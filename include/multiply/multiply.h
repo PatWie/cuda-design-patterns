@@ -21,7 +21,7 @@
 
 #include "include/cuda_utils.h"
 
-template <typename ValueT, typename Device = XpuDevice>
+template <typename ValueT, typename Device = AnyDevice>
 struct Multiply {
   static void Apply(const ValueT* A, const ValueT* B, const int H, const int W,
                     ValueT* C);
