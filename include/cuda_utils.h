@@ -135,7 +135,8 @@ __global__ void Run(const T kernel) {
  * @param  kernel a struct containing the cuda kernel.
  * @return elapsed time in milli-seconds
  */
-float Benchmark(Kernel* kernel) {
+template <typename T>
+float Benchmark(T* kernel) {
   cudaEvent_t start, stop;
   cudaEventCreate(&start);
   cudaEventCreate(&stop);
@@ -267,7 +268,12 @@ class KernelDispatcher {
  public:
   explicit KernelDispatcher(bool extend = true) : extend(extend) {}
 
-  // register
+  // Register a instantiated kernel.
+  //
+  // Example
+  //    cuda::KernelDispatcher<int> dispatcher;
+  //    kernel<float, X> instance;
+  //    dispatcher.Register(y, &instance);
   template <typename T>
   void Register(KeyT bound, T* kernel) {
     static_assert(impl::HasLaunchMethod<T>::value,
@@ -276,7 +282,13 @@ class KernelDispatcher {
     Register(bound, [&]() { kernel->Launch(); });
   }
 
-  // register and initialize
+  // Register and intialize a instantiated kernel.
+  //
+  // Example
+  //    cuda::KernelDispatcher<int> dispatcher;
+  //    kernel<float, X> instance;
+  //    initializer init;
+  //    dispatcher.Register(y, &instance, init);
   template <typename T, typename Initializer>
   void Register(KeyT bound, T* kernel, Initializer initializer) {
     static_assert(impl::HasLaunchMethod<T>::value,
@@ -284,6 +296,36 @@ class KernelDispatcher {
                   "YOU_MADE_A_PROGAMMING_MISTAKE");
     initializer(kernel);
     Register(bound, [&]() { kernel->Launch(); });
+  }
+
+  // Register a kernel.
+  //
+  // Example
+  //    cuda::KernelDispatcher<int> dispatcher;
+  //    dispatcher.Register<kernel<float, X>>(y);
+  template <typename T>
+  void Register(KeyT bound) {
+    static_assert(impl::HasLaunchMethod<T>::value,
+                  "The kernel struct needs to have a 'Launch()' method! "
+                  "YOU_MADE_A_PROGAMMING_MISTAKE");
+    T kernel;
+    Register(bound, [&]() { kernel->Launch(); });
+  }
+
+  // Register and intialize a kernel.
+  //
+  // Example
+  //    cuda::KernelDispatcher<int> dispatcher;
+  //    initializer init;
+  //    dispatcher.Register<kernel<float, X>>(y, init);
+  template <typename T, typename Initializer>
+  void Register(KeyT bound, Initializer initializer) {
+    static_assert(impl::HasLaunchMethod<T>::value,
+                  "The kernel struct needs to have a 'Launch()' method! "
+                  "YOU_MADE_A_PROGAMMING_MISTAKE");
+    T kernel;
+    initializer(&kernel);
+    Register(bound, [&]() { kernel.Launch(); });
   }
 
   // // would require C++14 to use

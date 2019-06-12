@@ -109,14 +109,10 @@ int main() {
   // But for now, we need this workaround.
   Initializer init(42.f);
 
+  // Simple hyper-parameter:
   cuda::KernelDispatcher<int> disp(true);
-  ExpertKernel1D<float, 4> kernelA;
-  ExpertKernel1D<float, 8> kernelB;
-
-  // Register the kernel "kernelA" for length up to 3 (inclusive).
-  disp.Register(3, &kernelA, init);
-  // Register the kernel "kernelB" for length up to 6 (inclusive).
-  disp.Register(6, &kernelB, init);
+  disp.Register<ExpertKernel1D<float, 4>>(3, init);
+  disp.Register<ExpertKernel1D<float, 8>>(6, init);
 
   for (int i = 0; i < 9; ++i) {
     printf("%d : \n", i);
@@ -125,12 +121,9 @@ int main() {
   }
 
   // Multi-dimensional hyper-parameters:
-  ExpertKernel2D<float, 4, 3> kernelA2d;
-  ExpertKernel2D<float, 8, 4> kernelB2d;
-
   cuda::KernelDispatcher<std::tuple<int, int>> disp2(true);
-  disp2.Register(std::make_tuple(4, 3), &kernelA2d, init);
-  disp2.Register(std::make_tuple(9, 4), &kernelB2d, init);
+  disp2.Register<ExpertKernel2D<float, 4, 3>>(std::make_tuple(4, 3), init);
+  disp2.Register<ExpertKernel2D<float, 8, 4>>(std::make_tuple(9, 4), init);
 
   for (int i = 0; i < 10; ++i) {
     for (int j = 0; j < 5; ++j) {

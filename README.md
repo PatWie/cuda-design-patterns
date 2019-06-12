@@ -93,31 +93,30 @@ Given a generic CUDA kernel and a specialization
 
 ```cpp
 template <typename ValueT, int BLOCK_DIM_X>
-struct ExpertKernel : public cuda::Kernel {}
+struct MyKernel : public cuda::Kernel {}
 
 template <typename ValueT>
-struct ExpertKernel<ValueT, 4> : public cuda::Kernel {}
+struct MyKernel<ValueT, 4> : public cuda::Kernel {}
 ```
 
 we use the kernel dispatcher
 
 ```cpp
-ExpertKernel<float, 4> kernelA;
-ExpertKernel<float, 8> kernelB;
+MyKernel<float, 4> kernelA;
+MyKernel<float, 8> kernelB;
 
-cuda::KernelDispatcher<int> disp(true);
-disp.Register(3, kernelA); // for length up to 3 (inclusive) start kernelA
-disp.Register(6, kernelB); // for length up to 6 (inclusive) start kernelB
-                           // as `disp(true)` this kernel will handle all
-                           // larger values as well
-int i = 4; // a runtime value
-disp.Run(i); // triggers `kernelB`
+cuda::KernelDispatcher<int> dispatcher(true);
+dispatcher.Register<MyKernel<float, 4>>(3); // for length up to 3 (inclusive) start MyKernel<float, 4>
+dispatcher.Register<MyKernel<float, 8>>(6); // for length up to 6 (inclusive) start MyKernel<float, 8>
+                                            // as `dispatcher(true)` this kernel will handle all
+                                            // larger values as well
+int i = 4;         // a runtime value
+dispatcher.Run(i); // triggers `kernelB`
 ```
 
 The dispatcher can also handle multi-dim values and a initializer
 
 ```cpp
-
 struct Initializer {
   template <typename T>
   void operator()(T* el) {
@@ -125,9 +124,9 @@ struct Initializer {
   }
 };
 Initializer init;
-cuda2::KernelDispatcher<std::tuple<int, int>> disp2(true);
-disp2.Register(std::make_tuple(4, 3), kernelA2d, init);
-disp2.Register(std::make_tuple(9, 4), kernelB2d, init);
+cuda::KernelDispatcher<std::tuple<int, int>> disp(true);
+disp.Register<ExpertKernel2D<float, 4, 3>>(std::make_tuple(4, 3), init);
+disp.Register<ExpertKernel2D<float, 8, 4>>(std::make_tuple(9, 4), init);
 ```
 
 **Reasons:**
