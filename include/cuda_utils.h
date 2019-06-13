@@ -1,6 +1,3 @@
-#ifndef INCLUDE_CUDA_UTILS_H_
-#define INCLUDE_CUDA_UTILS_H_
-
 /* Copyright 2018 Authors. All Rights Reserved.
 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,6 +17,9 @@
  *
  */
 
+#ifndef INCLUDE_CUDA_UTILS_H_
+#define INCLUDE_CUDA_UTILS_H_
+
 #include <stdio.h>
 #include <functional>
 #include <iostream>
@@ -29,11 +29,6 @@
 #include <tuple>
 #include <typeinfo>
 #include <utility>
-
-#ifdef __GNUG__
-#include <cxxabi.h>
-#include <cstdlib>
-#endif
 
 // Template parameter for compile-time cuda drop-in replacements of cpu
 // functions.
@@ -253,30 +248,6 @@ class HasLaunchMethod {
 
 };  // namespace impl
 
-// taken from https://stackoverflow.com/a/4541470/7443104
-#ifdef __GNUG__
-
-template <int DummyToBeInHeaderfile>
-std::string demangle(const char* name) {
-  int status = -4;  // some arbitrary value to eliminate the compiler warning
-
-  // enable c++11 by passing the flag -std=c++11 to g++
-  std::unique_ptr<char, void (*)(void*)> res{
-      abi::__cxa_demangle(name, NULL, NULL, &status), std::free};
-
-  return (status == 0) ? res.get() : name;
-}
-
-#else
-
-// does nothing if not g++
-template <int DummyToBeInHeaderfile>
-std::string demangle(const char* name) {
-  return name;
-}
-
-#endif
-
 /**
  * Dispatch template kernels according to a hyper parameter.
  *
@@ -296,8 +267,7 @@ std::string demangle(const char* name) {
 template <typename KeyT = int, typename TComparator = std::less<KeyT>>
 class KernelDispatcher {
   using TLauncherFunc = std::function<void()>;
-  using ValueT = std::tuple<TLauncherFunc, std::string>;
-  using TLauncherFuncMap = std::map<KeyT, ValueT, TComparator>;
+  using TLauncherFuncMap = std::map<KeyT, TLauncherFunc, TComparator>;
 
  public:
   explicit KernelDispatcher(bool extend = true) : extend(extend) {}
@@ -380,7 +350,7 @@ class KernelDispatcher {
     if (detected_kernel == kernels_.end()) {
       if (extend) {
         // Assume kernel with largest bound is the generic version.
-        std::get<0>(kernels_.rbegin()->second)();
+        kernels_.rbegin()->second();
       } else {
         // const KeyT upper_bound = kernels_.rbegin()->first;
         throw std::runtime_error(
@@ -390,47 +360,14 @@ class KernelDispatcher {
       }
     } else {
       // Found registered kernel and will launch it.
-      std::get<0>(detected_kernel->second)();
+      detected_kernel->second();
     }
-  }
-
-  void Benchmark() {
-#if __CUDACC__
-    std::cout << "Start Benchmark" << std::endl;
-
-    for (auto&& kernel : kernels_) {
-      const std::string name = std::get<1>(kernel.second);
-      std::cout << "key " << kernel.first << " [" << name << "] ...";
-      cudaEvent_t start, stop;
-      cudaEventCreate(&start);
-      cudaEventCreate(&stop);
-
-      cudaEventRecord(start);
-      std::get<0>(kernel.second)();
-      cudaEventRecord(stop);
-
-      ASSERT_CUDA(cudaPeekAtLastError());
-      ASSERT_CUDA(cudaDeviceSynchronize());
-
-      cudaEventSynchronize(stop);
-
-      float milliseconds = 0;
-      cudaEventElapsedTime(&milliseconds, start, stop);
-
-      cudaEventDestroy(start);
-      cudaEventDestroy(stop);
-
-      std::cout << " took " << milliseconds << " ms" << std::endl;
-    }
-
-#endif  // __CUDACC__
   }
 
  private:
   template <typename T>
   void Place(KeyT bound, TLauncherFunc&& launch_func) {
-    kernels_[bound] = std::make_tuple(std::forward<TLauncherFunc>(launch_func),
-                                      demangle<0>(typeid(T).name()));
+    kernels_[bound] = std::forward<TLauncherFunc>(launch_func);
   }
 
   TLauncherFuncMap kernels_;

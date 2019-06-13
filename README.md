@@ -87,7 +87,7 @@ int* val2 = reinterpret_cast<int*>(&shm[5]); // 3 ints
 
 [EXAMPLE](./src/tune.cu.cc)
 
-As in the *CUDA Boilerplate Code* example we pack our kernels into structs. For different hyper-parameters we use template specialization.
+Like in the *CUDA Boilerplate Code* example we pack our kernels into structs. For different hyper-parameters we use template specialization.
 
 Given a generic CUDA kernel and a specialization
 
@@ -197,6 +197,31 @@ make test
 
 -  Most CIs do not have a CUDA runtime installed. Whenever, `WITH_CUDA=ON` is activated the test code for CUDA will be also build.
 -  FindCuda might be more robust than a custom makefile.
+
+## Benchmark Kernels (WIP)
+
+**Description:**
+Like in the *CUDA Boilerplate Code* example we pack our kernels into structs. We might want th benchmark different template arguments.
+
+```cpp
+cuda::KernelBenchmarker<int> bench;
+bench.Register<multiply_kernels::Multiply<float, 4> >(4, init);
+bench.Register<multiply_kernels::Multiply<float, 6> >(6, init);
+bench.Register<multiply_kernels::Multiply<float, 8> >(8, init);
+bench.Register<multiply_kernels::Multiply<float, 16> >(16, init);
+bench.Register<multiply_kernels::Multiply<float, 32> >(32, init);
+bench.Run();
+```
+
+will give the output:
+
+```
+key 4 [multiply_kernels::Multiply<float, 4>] ... took 35.8959 ms
+key 6 [multiply_kernels::Multiply<float, 6>] ... took 12.6762 ms
+key 8 [multiply_kernels::Multiply<float, 8>] ... took 5.67414 ms
+key 16 [multiply_kernels::Multiply<float, 16>] ... took 4.0704 ms
+key 32 [multiply_kernels::Multiply<float, 32>] ... took 4.73555 ms
+```
 
 ## Tools
 - [online CUDA calculator](http://cuda.patwie.com/) instead of the NVIDIA Excel-sheet

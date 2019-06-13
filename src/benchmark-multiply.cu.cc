@@ -16,6 +16,7 @@
  *
  */
 
+#include "include/cuda_benchmark.h"
 #include "include/cuda_utils.h"
 #include "include/multiply/multiply.h"
 
@@ -66,7 +67,7 @@ int main() {
   Initializer init(d_A, d_B, d_C);
 
   // test different options
-  cuda::KernelDispatcher<int> bench;
+  cuda::KernelBenchmarker<int> bench;
   bench.Register<multiply_kernels::Multiply<float, 2> >(2, init);
   bench.Register<multiply_kernels::Multiply<float, 3> >(3, init);
   bench.Register<multiply_kernels::Multiply<float, 4> >(4, init);
@@ -77,7 +78,7 @@ int main() {
   bench.Register<multiply_kernels::Multiply<float, 20> >(20, init);
   bench.Register<multiply_kernels::Multiply<float, 32> >(32, init);
 
-  bench.Benchmark();
+  bench.Run();
 
   return 0;
 }
