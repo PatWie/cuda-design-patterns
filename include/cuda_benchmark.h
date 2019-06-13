@@ -22,12 +22,12 @@
 #include <stdio.h>
 #include <functional>
 #include <iostream>
-#include <map>
 #include <memory>
 #include <string>
 #include <tuple>
 #include <typeinfo>
 #include <utility>
+#include <vector>
 
 #ifdef __GNUG__
 #include <cxxabi.h>
@@ -35,6 +35,9 @@
 #endif
 #include "include/cuda_utils.h"
 
+namespace cuda {
+
+namespace impl {
 // taken from https://stackoverflow.com/a/4541470/7443104
 #ifdef __GNUG__
 
@@ -58,30 +61,23 @@ std::string demangle(const char* name) {
 }
 
 #endif
-
-namespace cuda {
+}  // namespace impl
 
 /**
- * Dispatch template kernels according to a hyper parameter.
+ * Benchmarks several templated kernels.
  *
- *   ExpertKernel<float, 4> kernelA;
- *   ExpertKernel<float, 8> kernelB;
- *   cuda::KernelBenchmarker disp(false);
- *
- *   disp.Register(3, kernelA); // for length up to 3 (inclusive) start kernelA
- *   disp.Register(6, kernelB); // for length up to 6 (inclusive) start kernelB
- *
- *   int i = 6;       // runtime variable
- *   disp.Run(i - 1); // launches kernelA
- *   disp.Run(i);     // launches kernelB
- *   disp.Run(i + 1); // triggers runtime exeception because of
- *                    // `disp(false)`
+ *   cuda::KernelBenchmarker<int> bench;
+ *   bench.Case<multiply_kernels::Multiply<float, 2> >(init);
+ *   bench.Case<multiply_kernels::Multiply<float, 4> >(init);
+ *   bench.Case<multiply_kernels::Multiply<float, 8> >(init);
+ *   bench.Case<multiply_kernels::Multiply<float, 16> >(init);
+ *   bench.Case<multiply_kernels::Multiply<float, 32> >(init);
+ *   bench.Run();
  */
-template <typename KeyT = int, typename TComparator = std::less<KeyT>>
+template <typename KeyT = int>
 class KernelBenchmarker {
   using TLauncherFunc = std::function<void()>;
   using ValueT = std::tuple<TLauncherFunc, std::string>;
-  using TLauncherFuncMap = std::map<KeyT, ValueT, TComparator>;
 
  public:
   // Taken from KernelDispatcher. Execuse the duplicated code. Templates cannot
@@ -93,75 +89,73 @@ class KernelBenchmarker {
   // Example
   //    cuda::KernelDispatcher<int> dispatcher;
   //    kernel<float, X> instance;
-  //    dispatcher.Register(y, &instance);
+  //    dispatcher.Case(&instance);
   template <typename T>
-  void Register(KeyT bound, T* kernel) {
+  void Case(T* kernel) {
     static_assert(impl::HasLaunchMethod<T>::value,
                   "The kernel struct needs to have a 'Launch()' method! "
                   "YOU_MADE_A_PROGAMMING_MISTAKE");
-    Place<T>(bound, [&]() { kernel->Launch(); });
+    Place<T>([&]() { kernel->Launch(); });
   }
 
-  // Register and intialize a instantiated kernel.
+  // Case and intialize a instantiated kernel.
   //
   // Example
   //    cuda::KernelDispatcher<int> dispatcher;
   //    kernel<float, X> instance;
   //    initializer init;
-  //    dispatcher.Register(y, &instance, init);
+  //    dispatcher.Case(&instance, init);
   template <typename T, typename Initializer>
-  void Register(KeyT bound, T* kernel, Initializer initializer) {
+  void Case(T* kernel, Initializer initializer) {
     static_assert(impl::HasLaunchMethod<T>::value,
                   "The kernel struct needs to have a 'Launch()' method! "
                   "YOU_MADE_A_PROGAMMING_MISTAKE");
     initializer(kernel);
-    Place<T>(bound, [&]() { kernel->Launch(); });
+    Place<T>([&]() { kernel->Launch(); });
   }
 
-  // Register a kernel.
+  // Case a kernel.
   //
   // Example
   //    cuda::KernelDispatcher<int> dispatcher;
-  //    dispatcher.Register<kernel<float, X>>(y);
+  //    dispatcher.Case<kernel<float, X>>();
   template <typename T>
-  void Register(KeyT bound) {
+  void Case() {
     static_assert(impl::HasLaunchMethod<T>::value,
                   "The kernel struct needs to have a 'Launch()' method! "
                   "YOU_MADE_A_PROGAMMING_MISTAKE");
-    T kernel;
-    Place<T>(bound, [&]() { kernel->Launch(); });
+    T* kernel = new T();  // neds to be on heap
+    Place<T>([&]() { kernel->Launch(); });
   }
 
-  // Register and intialize a kernel.
+  // Case and intialize a kernel.
   //
   // Example
   //    cuda::KernelDispatcher<int> dispatcher;
   //    initializer init;
-  //    dispatcher.Register<kernel<float, X>>(y, init);
+  //    dispatcher.Case<kernel<float, X>>(init);
   template <typename T, typename Initializer>
-  void Register(KeyT bound, Initializer initializer) {
+  void Case(Initializer initializer) {
     static_assert(impl::HasLaunchMethod<T>::value,
                   "The kernel struct needs to have a 'Launch()' method! "
                   "YOU_MADE_A_PROGAMMING_MISTAKE");
-    T kernel;
-    initializer(&kernel);
-    Place<T>(bound, [&]() { kernel.Launch(); });
+    T* kernel = new T();  // neds to be on heap
+    initializer(kernel);
+    Place<T>([&]() { kernel->Launch(); });
   }
   // END DUPLICATE CODE
 
   void Run() {
 #if __CUDACC__
-    std::cout << "Start Benchmark" << std::endl;
-
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
     for (auto&& kernel : kernels_) {
-      const std::string name = std::get<1>(kernel.second);
-      std::cout << "key " << kernel.first << " [" << name << "] ...";
-      cudaEvent_t start, stop;
-      cudaEventCreate(&start);
-      cudaEventCreate(&stop);
+      const std::string name = std::get<1>(kernel);
+      std::cout << name << " ";
 
       cudaEventRecord(start);
-      std::get<0>(kernel.second)();
+      std::get<0>(kernel)();
       cudaEventRecord(stop);
 
       ASSERT_CUDA(cudaPeekAtLastError());
@@ -172,23 +166,23 @@ class KernelBenchmarker {
       float milliseconds = 0;
       cudaEventElapsedTime(&milliseconds, start, stop);
 
-      cudaEventDestroy(start);
-      cudaEventDestroy(stop);
-
       std::cout << " took " << milliseconds << " ms" << std::endl;
     }
+
+    cudaEventDestroy(start);
+    cudaEventDestroy(stop);
 
 #endif  // __CUDACC__
   }
 
  private:
   template <typename T>
-  void Place(KeyT bound, TLauncherFunc&& launch_func) {
-    kernels_[bound] = std::make_tuple(std::forward<TLauncherFunc>(launch_func),
-                                      demangle<0>(typeid(T).name()));
+  void Place(TLauncherFunc&& launch_func) {
+    kernels_.push_back(std::make_tuple(std::forward<TLauncherFunc>(launch_func),
+                                       impl::demangle<0>(typeid(T).name())));
   }
 
-  TLauncherFuncMap kernels_;
+  std::vector<ValueT> kernels_;
   bool extend = true;  // if true kernel with largest bound will act as default
 };
 }  // namespace cuda

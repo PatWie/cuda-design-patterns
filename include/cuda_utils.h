@@ -60,10 +60,10 @@ struct AnyDevice {
  * @param  ans is a function that returns a cudaError_t
  * taken from: https://stackoverflow.com/a/14038590
  */
-#if NDEBUG
-// disable assert in production code
-#define ASSERT_CUDA(ans) ((void)ans)
-#else  // NDEBUG
+// #if NDEBUG
+// // disable assert in production code
+// #define ASSERT_CUDA(ans) ((void)ans)
+// #else  // NDEBUG
 #define ASSERT_CUDA(ans) \
   { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert(cudaError_t code, const char* file, int line,
@@ -74,7 +74,7 @@ inline void gpuAssert(cudaError_t code, const char* file, int line,
     if (abort) exit(code);
   }
 }
-#endif  // NDEBUG
+// #endif  // NDEBUG
 
 namespace cuda {
 

@@ -21,13 +21,14 @@
 #include "include/multiply/multiply.h"
 
 struct Initializer {
-  explicit Initializer(float *d_A, float *d_B, float *d_C)
-      : d_A(d_A), d_B(d_B), d_C(d_C) {}
+  explicit Initializer(float *d_A, float *d_B, float *d_C, int height,
+                       int width)
+      : d_A(d_A), d_B(d_B), d_C(d_C), height(height), width(width) {}
 
   template <typename TKernel>
   void operator()(TKernel *kernel) {
-    kernel->H = 1024;
-    kernel->W = 1024;
+    kernel->H = height;
+    kernel->W = width;
     kernel->A = d_A;
     kernel->B = d_B;
     kernel->C = d_C;
@@ -36,12 +37,16 @@ struct Initializer {
   float *d_A;
   float *d_B;
   float *d_C;
+  int height;
+  int width;
 };
 
 // Simple way to benchmark the template parameters.
-int main() {
-  constexpr int height = 1024;
-  constexpr int width = 1024;
+void run_for(int height, int width) {
+  std::cout << std::endl
+            << "Benchmark for " << height << " " << width
+            << " -------------------------------- " << std::endl;
+
   float *A = new float[height * width];
   float *B = new float[height * width];
   float *C = new float[height * width];
@@ -64,35 +69,69 @@ int main() {
   ASSERT_CUDA(cudaMemcpy(d_A, A, num_bytes, cudaMemcpyHostToDevice));
   ASSERT_CUDA(cudaMemcpy(d_B, B, num_bytes, cudaMemcpyHostToDevice));
 
-  Initializer init(d_A, d_B, d_C);
+  Initializer init(d_A, d_B, d_C, height, width);
 
-  // test different options
+  // Test different options.
   cuda::KernelBenchmarker<int> bench;
-  bench.Register<multiply_kernels::Multiply<float, 2> >(2, init);
-  bench.Register<multiply_kernels::Multiply<float, 3> >(3, init);
-  bench.Register<multiply_kernels::Multiply<float, 4> >(4, init);
-  bench.Register<multiply_kernels::Multiply<float, 6> >(6, init);
-  bench.Register<multiply_kernels::Multiply<float, 8> >(8, init);
-  bench.Register<multiply_kernels::Multiply<float, 10> >(10, init);
-  bench.Register<multiply_kernels::Multiply<float, 16> >(16, init);
-  bench.Register<multiply_kernels::Multiply<float, 20> >(20, init);
-  bench.Register<multiply_kernels::Multiply<float, 32> >(32, init);
-
+  bench.Case<multiply_kernels::Multiply<float, 2> >(init);
+  bench.Case<multiply_kernels::Multiply<float, 3> >(init);
+  bench.Case<multiply_kernels::Multiply<float, 4> >(init);
+  bench.Case<multiply_kernels::Multiply<float, 6> >(init);
+  bench.Case<multiply_kernels::Multiply<float, 8> >(init);
+  bench.Case<multiply_kernels::Multiply<float, 10> >(init);
+  bench.Case<multiply_kernels::Multiply<float, 16> >(init);
+  bench.Case<multiply_kernels::Multiply<float, 20> >(init);
+  bench.Case<multiply_kernels::Multiply<float, 32> >(init);
   bench.Run();
 
+  delete[] A;
+  delete[] B;
+  delete[] C;
+  ASSERT_CUDA(cudaFree(d_A));
+  ASSERT_CUDA(cudaFree(d_B));
+  ASSERT_CUDA(cudaFree(d_C));
+}
+
+int main() {
+  run_for(256, 256);
+  run_for(512, 512);
+  run_for(1024, 1024);
   return 0;
 }
 
 /*
 Output:
-key 2 [multiply_kernels::Multiply<float, 2>] ... took 250.052 ms
-key 3 [multiply_kernels::Multiply<float, 3>] ... took 77.2038 ms
-key 4 [multiply_kernels::Multiply<float, 4>] ... took 35.8959 ms
-key 6 [multiply_kernels::Multiply<float, 6>] ... took 12.6762 ms
-key 8 [multiply_kernels::Multiply<float, 8>] ... took 5.67414 ms
-key 10 [multiply_kernels::Multiply<float, 10>] ... took 6.18115 ms
-key 16 [multiply_kernels::Multiply<float, 16>] ... took 4.0704 ms
-key 20 [multiply_kernels::Multiply<float, 20>] ... took 6.8576 ms
-key 32 [multiply_kernels::Multiply<float, 32>] ... took 4.73555 ms
+Benchmark for 256 256 --------------------------------
+multiply_kernels::Multiply<float, 2>  took 2.91322 ms
+multiply_kernels::Multiply<float, 3>  took 0.956768 ms
+multiply_kernels::Multiply<float, 4>  took 0.397472 ms
+multiply_kernels::Multiply<float, 6>  took 0.193184 ms
+multiply_kernels::Multiply<float, 8>  took 0.096512 ms
+multiply_kernels::Multiply<float, 10>  took 0.118912 ms
+multiply_kernels::Multiply<float, 16>  took 0.084544 ms
+multiply_kernels::Multiply<float, 20>  took 0.098304 ms
+multiply_kernels::Multiply<float, 32>  took 0.0816 ms
+
+Benchmark for 512 512 --------------------------------
+multiply_kernels::Multiply<float, 2>  took 25.7449 ms
+multiply_kernels::Multiply<float, 3>  took 8.61693 ms
+multiply_kernels::Multiply<float, 4>  took 3.18605 ms
+multiply_kernels::Multiply<float, 6>  took 1.42717 ms
+multiply_kernels::Multiply<float, 8>  took 0.674464 ms
+multiply_kernels::Multiply<float, 10>  took 0.848448 ms
+multiply_kernels::Multiply<float, 16>  took 0.590048 ms
+multiply_kernels::Multiply<float, 20>  took 0.6624 ms
+multiply_kernels::Multiply<float, 32>  took 0.603904 ms
+
+Benchmark for 1024 1024 --------------------------------
+multiply_kernels::Multiply<float, 2>  took 245.845 ms
+multiply_kernels::Multiply<float, 3>  took 77.8342 ms
+multiply_kernels::Multiply<float, 4>  took 33.6046 ms
+multiply_kernels::Multiply<float, 6>  took 12.244 ms
+multiply_kernels::Multiply<float, 8>  took 5.71571 ms
+multiply_kernels::Multiply<float, 10>  took 6.38643 ms
+multiply_kernels::Multiply<float, 16>  took 4.60816 ms
+multiply_kernels::Multiply<float, 20>  took 5.86672 ms
+multiply_kernels::Multiply<float, 32>  took 4.24483 ms
 
 */

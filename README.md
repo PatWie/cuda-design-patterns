@@ -205,22 +205,22 @@ Like in the *CUDA Boilerplate Code* example we pack our kernels into structs. We
 
 ```cpp
 cuda::KernelBenchmarker<int> bench;
-bench.Register<multiply_kernels::Multiply<float, 4> >(4, init);
-bench.Register<multiply_kernels::Multiply<float, 6> >(6, init);
-bench.Register<multiply_kernels::Multiply<float, 8> >(8, init);
-bench.Register<multiply_kernels::Multiply<float, 16> >(16, init);
-bench.Register<multiply_kernels::Multiply<float, 32> >(32, init);
+bench.Case<multiply_kernels::Multiply<float, 4> >(init);
+bench.Case<multiply_kernels::Multiply<float, 6> >(init);
+bench.Case<multiply_kernels::Multiply<float, 8> >(init);
+bench.Case<multiply_kernels::Multiply<float, 16> >(init);
+bench.Case<multiply_kernels::Multiply<float, 32> >(init);
 bench.Run();
 ```
 
 will give the output:
 
 ```
-key 4 [multiply_kernels::Multiply<float, 4>] ... took 35.8959 ms
-key 6 [multiply_kernels::Multiply<float, 6>] ... took 12.6762 ms
-key 8 [multiply_kernels::Multiply<float, 8>] ... took 5.67414 ms
-key 16 [multiply_kernels::Multiply<float, 16>] ... took 4.0704 ms
-key 32 [multiply_kernels::Multiply<float, 32>] ... took 4.73555 ms
+multiply_kernels::Multiply<float, 4>  took 0.397472 ms
+multiply_kernels::Multiply<float, 6>  took 0.193184 ms
+multiply_kernels::Multiply<float, 8>  took 0.096512 ms
+multiply_kernels::Multiply<float, 16>  took 0.084544 ms
+multiply_kernels::Multiply<float, 32>  took 0.0816 ms
 ```
 
 ## Tools
