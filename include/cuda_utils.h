@@ -360,6 +360,35 @@ class KernelDispatcher {
     }
   }
 
+  void Benchmark() {
+#if __CUDACC__
+    for (auto&& kernel : kernels_) {
+      printf("Benchmark for key %5d ...", kernel.first);
+      cudaEvent_t start, stop;
+      cudaEventCreate(&start);
+      cudaEventCreate(&stop);
+
+      cudaEventRecord(start);
+      kernel.second();
+      cudaEventRecord(stop);
+
+      ASSERT_CUDA(cudaPeekAtLastError());
+      ASSERT_CUDA(cudaDeviceSynchronize());
+
+      cudaEventSynchronize(stop);
+
+      float milliseconds = 0;
+      cudaEventElapsedTime(&milliseconds, start, stop);
+
+      cudaEventDestroy(start);
+      cudaEventDestroy(stop);
+
+      printf("\t took  %f ms\n", milliseconds);
+    }
+
+#endif  // __CUDACC__
+  }
+
  private:
   void Register(KeyT bound, TLauncherFunc&& launch_func) {
     kernels_[bound] = std::forward<TLauncherFunc>(launch_func);
