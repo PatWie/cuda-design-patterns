@@ -15,7 +15,6 @@
  * Author: Patrick Wieschollek, <mail@patwie.com>, 2019
  *
  */
-#include <stdio.h>
 
 #include "include/cuda_utils.h"
 #include "include/multiply/multiply.h"
@@ -85,13 +84,14 @@ int main() {
 
 /*
 Output:
-Benchmark for key     2 ...  took  238.333221 ms
-Benchmark for key     3 ...  took  77.450241 ms
-Benchmark for key     4 ...  took  32.918240 ms
-Benchmark for key     6 ...  took  13.129920 ms
-Benchmark for key     8 ...  took  5.638592 ms
-Benchmark for key    10 ...  took  6.185696 ms
-Benchmark for key    16 ...  took  4.064512 ms
-Benchmark for key    20 ...  took  4.552064 ms
-Benchmark for key    32 ...  took  4.795360 ms
+key 2 [multiply_kernels::Multiply<float, 2>] ... took 250.052 ms
+key 3 [multiply_kernels::Multiply<float, 3>] ... took 77.2038 ms
+key 4 [multiply_kernels::Multiply<float, 4>] ... took 35.8959 ms
+key 6 [multiply_kernels::Multiply<float, 6>] ... took 12.6762 ms
+key 8 [multiply_kernels::Multiply<float, 8>] ... took 5.67414 ms
+key 10 [multiply_kernels::Multiply<float, 10>] ... took 6.18115 ms
+key 16 [multiply_kernels::Multiply<float, 16>] ... took 4.0704 ms
+key 20 [multiply_kernels::Multiply<float, 20>] ... took 6.8576 ms
+key 32 [multiply_kernels::Multiply<float, 32>] ... took 4.73555 ms
+
 */

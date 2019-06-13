@@ -32,7 +32,11 @@ target_link_libraries(multiply LINK_PUBLIC ${LIBRARIES})
 
 # Benchmark
 if(CUDA_FOUND)
-  cuda_add_executable(benchmark src/benchmark-multiply.cu.cc src/multiply/multiply_gpu.cu.cc src/multiply/multiply.cc)
+  cuda_add_executable(benchmark
+    src/benchmark-multiply.cu.cc
+    src/multiply/multiply_gpu.cu.cc
+    src/multiply/multiply.cc
+  )
 endif(CUDA_FOUND)
 
 # TESTS
