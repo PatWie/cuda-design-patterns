@@ -198,29 +198,37 @@ make test
 -  Most CIs do not have a CUDA runtime installed. Whenever, `WITH_CUDA=ON` is activated the test code for CUDA will be also build.
 -  FindCuda might be more robust than a custom makefile.
 
-## Benchmark Kernels (WIP)
+## Benchmark Kernels
 
 **Description:**
 Like in the *CUDA Boilerplate Code* example we pack our kernels into structs. We might want th benchmark different template arguments.
 
 ```cpp
-cuda::KernelBenchmarker<int> bench;
-bench.Case<multiply_kernels::Multiply<float, 4> >(init);
-bench.Case<multiply_kernels::Multiply<float, 6> >(init);
-bench.Case<multiply_kernels::Multiply<float, 8> >(init);
-bench.Case<multiply_kernels::Multiply<float, 16> >(init);
-bench.Case<multiply_kernels::Multiply<float, 32> >(init);
-bench.Run();
+cuda::KernelBenchmark<int> bench;
+bench.Case<multiply_kernels::Multiply<float, 4>>(init);
+bench.Case<multiply_kernels::Multiply<float, 6>>(init);
+bench.Case<multiply_kernels::Multiply<float, 8>>(init);
+bench.Case<multiply_kernels::Multiply<float, 16>>(init);
+bench.Case<multiply_kernels::Multiply<float, 32>>(init);
+bench.Start();
 ```
 
 will give the output:
 
 ```
-multiply_kernels::Multiply<float, 4>  took 0.397472 ms
-multiply_kernels::Multiply<float, 6>  took 0.193184 ms
-multiply_kernels::Multiply<float, 8>  took 0.096512 ms
-multiply_kernels::Multiply<float, 16>  took 0.084544 ms
-multiply_kernels::Multiply<float, 32>  took 0.0816 ms
+Using Device Number: 0
+  Device name: GeForce GTX 970
+  Memory Clock Rate (KHz): 3505000
+  Memory Bus Width (bits): 256
+  Peak Memory Bandwidth (GB/s): 224.320000
+
+time 500.000000 - 1000.000000, iters: 5 - 100
+ - multiply_kernels::Multiply<float, 4>    took     2.826743 ms stats(iters: 100, var:     0.067757, stddev:     0.260302)
+ - multiply_kernels::Multiply<float, 6>    took     1.245100 ms stats(iters: 100, var:     0.019352, stddev:     0.139112)
+ - multiply_kernels::Multiply<float, 8>    took     0.574468 ms stats(iters: 100, var:     0.000003, stddev:     0.001616)
+ - multiply_kernels::Multiply<float, 16>   took     0.502195 ms stats(iters: 100, var:     0.000002, stddev:     0.001380)
+ - multiply_kernels::Multiply<float, 32>   took     0.510635 ms stats(iters: 100, var:     0.000001, stddev:     0.001121)
+
 ```
 
 ## Tools

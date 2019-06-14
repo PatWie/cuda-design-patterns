@@ -106,6 +106,7 @@ struct Kernel {
    * @param stream used cuda stream
    */
   virtual void Launch(cudaStream_t stream = 0) = 0;
+  virtual ~Kernel() = default;
 
   /**
    * This operation contains the code, which will be executed on-chip.
@@ -124,44 +125,6 @@ struct Kernel {
 template <typename T>
 __global__ void Run(const T kernel) {
   kernel();
-}
-
-/**
- * Benchmark will run a cuda kernel and benchmark the run-time of the kernel.
- *
- * Example:
- *    Mykernel kernel;
- *    printf("kernel took %f ms", cuda::Benchmark(&kernel));
- *
- * Note: This will execute a `cudaDeviceSynchronize` and should only be used for
- * debugging and benchmarking -- not in production!
- *
- * @param  kernel a struct containing the cuda kernel.
- * @return elapsed time in milli-seconds
- */
-template <typename T>
-float Benchmark(T* kernel) {
-  cudaEvent_t start, stop;
-  cudaEventCreate(&start);
-  cudaEventCreate(&stop);
-
-  cudaEventRecord(start);
-  kernel->Launch();
-  cudaEventRecord(stop);
-
-  // This stall the GPU execution pipeline and should not be used in production.
-  ASSERT_CUDA(cudaPeekAtLastError());
-  ASSERT_CUDA(cudaDeviceSynchronize());
-
-  cudaEventSynchronize(stop);
-
-  float milliseconds = 0;
-  cudaEventElapsedTime(&milliseconds, start, stop);
-
-  cudaEventDestroy(start);
-  cudaEventDestroy(stop);
-
-  return milliseconds;
 }
 
 /**
@@ -230,7 +193,7 @@ struct SharedMemory {
 
 namespace cuda {
 
-namespace impl {
+namespace internal {
 template <typename T>
 class HasLaunchMethod {
  private:
@@ -246,7 +209,7 @@ class HasLaunchMethod {
   enum { value = sizeof(verify<T>(0)) == sizeof(yes) };
 };
 
-};  // namespace impl
+};  // namespace internal
 
 /**
  * Dispatch template kernels according to a hyper parameter.
@@ -280,7 +243,7 @@ class KernelDispatcher {
   //    dispatcher.Register(y, &instance);
   template <typename T>
   void Register(KeyT bound, T* kernel) {
-    static_assert(impl::HasLaunchMethod<T>::value,
+    static_assert(internal::HasLaunchMethod<T>::value,
                   "The kernel struct needs to have a 'Launch()' method! "
                   "YOU_MADE_A_PROGAMMING_MISTAKE");
     Place<T>(bound, [&]() { kernel->Launch(); });
@@ -295,7 +258,7 @@ class KernelDispatcher {
   //    dispatcher.Register(y, &instance, init);
   template <typename T, typename Initializer>
   void Register(KeyT bound, T* kernel, Initializer initializer) {
-    static_assert(impl::HasLaunchMethod<T>::value,
+    static_assert(internal::HasLaunchMethod<T>::value,
                   "The kernel struct needs to have a 'Launch()' method! "
                   "YOU_MADE_A_PROGAMMING_MISTAKE");
     initializer(kernel);
@@ -309,7 +272,7 @@ class KernelDispatcher {
   //    dispatcher.Register<kernel<float, X>>(y);
   template <typename T>
   void Register(KeyT bound) {
-    static_assert(impl::HasLaunchMethod<T>::value,
+    static_assert(internal::HasLaunchMethod<T>::value,
                   "The kernel struct needs to have a 'Launch()' method! "
                   "YOU_MADE_A_PROGAMMING_MISTAKE");
     T kernel;
@@ -324,7 +287,7 @@ class KernelDispatcher {
   //    dispatcher.Register<kernel<float, X>>(y, init);
   template <typename T, typename Initializer>
   void Register(KeyT bound, Initializer initializer) {
-    static_assert(impl::HasLaunchMethod<T>::value,
+    static_assert(internal::HasLaunchMethod<T>::value,
                   "The kernel struct needs to have a 'Launch()' method! "
                   "YOU_MADE_A_PROGAMMING_MISTAKE");
     T kernel;

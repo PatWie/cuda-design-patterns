@@ -72,17 +72,17 @@ void run_for(int height, int width) {
   Initializer init(d_A, d_B, d_C, height, width);
 
   // Test different options.
-  cuda::KernelBenchmarker<int> bench;
-  bench.Case<multiply_kernels::Multiply<float, 2> >(init);
-  bench.Case<multiply_kernels::Multiply<float, 3> >(init);
-  bench.Case<multiply_kernels::Multiply<float, 4> >(init);
-  bench.Case<multiply_kernels::Multiply<float, 6> >(init);
-  bench.Case<multiply_kernels::Multiply<float, 8> >(init);
-  bench.Case<multiply_kernels::Multiply<float, 10> >(init);
-  bench.Case<multiply_kernels::Multiply<float, 16> >(init);
-  bench.Case<multiply_kernels::Multiply<float, 20> >(init);
-  bench.Case<multiply_kernels::Multiply<float, 32> >(init);
-  bench.Run();
+  cuda::KernelBenchmark<int> bench;
+  bench.Case<multiply_kernels::Multiply<float, 2>>(init);
+  bench.Case<multiply_kernels::Multiply<float, 3>>(init);
+  bench.Case<multiply_kernels::Multiply<float, 4>>(init);
+  bench.Case<multiply_kernels::Multiply<float, 6>>(init);
+  bench.Case<multiply_kernels::Multiply<float, 8>>(init);
+  bench.Case<multiply_kernels::Multiply<float, 10>>(init);
+  bench.Case<multiply_kernels::Multiply<float, 16>>(init);
+  bench.Case<multiply_kernels::Multiply<float, 20>>(init);
+  bench.Case<multiply_kernels::Multiply<float, 32>>(init);
+  bench.Start();
 
   delete[] A;
   delete[] B;
@@ -99,39 +99,61 @@ int main() {
   return 0;
 }
 
+// clang-format off
 /*
-Output:
 Benchmark for 256 256 --------------------------------
-multiply_kernels::Multiply<float, 2>  took 2.91322 ms
-multiply_kernels::Multiply<float, 3>  took 0.956768 ms
-multiply_kernels::Multiply<float, 4>  took 0.397472 ms
-multiply_kernels::Multiply<float, 6>  took 0.193184 ms
-multiply_kernels::Multiply<float, 8>  took 0.096512 ms
-multiply_kernels::Multiply<float, 10>  took 0.118912 ms
-multiply_kernels::Multiply<float, 16>  took 0.084544 ms
-multiply_kernels::Multiply<float, 20>  took 0.098304 ms
-multiply_kernels::Multiply<float, 32>  took 0.0816 ms
+Using Device Number: 0
+  Device name: GeForce GTX 970
+  Memory Clock Rate (KHz): 3505000
+  Memory Bus Width (bits): 256
+  Peak Memory Bandwidth (GB/s): 224.320000
+
+time 500.000000 - 1000.000000, iters: 5 - 100
+ - multiply_kernels::Multiply<float, 2>    took     3.047784 ms stats(iters: 100, var:     0.082136, stddev:     0.286594)
+ - multiply_kernels::Multiply<float, 3>    took     0.847197 ms stats(iters: 100, var:     0.002289, stddev:     0.047846)
+ - multiply_kernels::Multiply<float, 4>    took     0.337858 ms stats(iters: 100, var:     0.000039, stddev:     0.006252)
+ - multiply_kernels::Multiply<float, 6>    took     0.162206 ms stats(iters: 100, var:     0.000004, stddev:     0.001925)
+ - multiply_kernels::Multiply<float, 8>    took     0.081275 ms stats(iters: 100, var:     0.000000, stddev:     0.000677)
+ - multiply_kernels::Multiply<float, 10>   took     0.100844 ms stats(iters: 100, var:     0.000000, stddev:     0.000486)
+ - multiply_kernels::Multiply<float, 16>   took     0.072184 ms stats(iters: 100, var:     0.000001, stddev:     0.000723)
+ - multiply_kernels::Multiply<float, 20>   took     0.082570 ms stats(iters: 100, var:     0.000004, stddev:     0.001894)
+ - multiply_kernels::Multiply<float, 32>   took     0.070467 ms stats(iters: 100, var:     0.000008, stddev:     0.002803)
 
 Benchmark for 512 512 --------------------------------
-multiply_kernels::Multiply<float, 2>  took 25.7449 ms
-multiply_kernels::Multiply<float, 3>  took 8.61693 ms
-multiply_kernels::Multiply<float, 4>  took 3.18605 ms
-multiply_kernels::Multiply<float, 6>  took 1.42717 ms
-multiply_kernels::Multiply<float, 8>  took 0.674464 ms
-multiply_kernels::Multiply<float, 10>  took 0.848448 ms
-multiply_kernels::Multiply<float, 16>  took 0.590048 ms
-multiply_kernels::Multiply<float, 20>  took 0.6624 ms
-multiply_kernels::Multiply<float, 32>  took 0.603904 ms
+Using Device Number: 0
+  Device name: GeForce GTX 970
+  Memory Clock Rate (KHz): 3505000
+  Memory Bus Width (bits): 256
+  Peak Memory Bandwidth (GB/s): 224.320000
+
+time 500.000000 - 1000.000000, iters: 5 - 100
+ - multiply_kernels::Multiply<float, 2>    took    20.967186 ms stats(iters:  48, var:     1.166002, stddev:     1.079816)
+ - multiply_kernels::Multiply<float, 3>    took     6.682436 ms stats(iters: 100, var:     0.122818, stddev:     0.350454)
+ - multiply_kernels::Multiply<float, 4>    took     2.826743 ms stats(iters: 100, var:     0.067757, stddev:     0.260302)
+ - multiply_kernels::Multiply<float, 6>    took     1.245100 ms stats(iters: 100, var:     0.019352, stddev:     0.139112)
+ - multiply_kernels::Multiply<float, 8>    took     0.574468 ms stats(iters: 100, var:     0.000003, stddev:     0.001616)
+ - multiply_kernels::Multiply<float, 10>   took     0.713191 ms stats(iters: 100, var:     0.000003, stddev:     0.001810)
+ - multiply_kernels::Multiply<float, 16>   took     0.502195 ms stats(iters: 100, var:     0.000002, stddev:     0.001380)
+ - multiply_kernels::Multiply<float, 20>   took     0.560309 ms stats(iters: 100, var:     0.000006, stddev:     0.002414)
+ - multiply_kernels::Multiply<float, 32>   took     0.510635 ms stats(iters: 100, var:     0.000001, stddev:     0.001121)
 
 Benchmark for 1024 1024 --------------------------------
-multiply_kernels::Multiply<float, 2>  took 245.845 ms
-multiply_kernels::Multiply<float, 3>  took 77.8342 ms
-multiply_kernels::Multiply<float, 4>  took 33.6046 ms
-multiply_kernels::Multiply<float, 6>  took 12.244 ms
-multiply_kernels::Multiply<float, 8>  took 5.71571 ms
-multiply_kernels::Multiply<float, 10>  took 6.38643 ms
-multiply_kernels::Multiply<float, 16>  took 4.60816 ms
-multiply_kernels::Multiply<float, 20>  took 5.86672 ms
-multiply_kernels::Multiply<float, 32>  took 4.24483 ms
+Using Device Number: 0
+  Device name: GeForce GTX 970
+  Memory Clock Rate (KHz): 3505000
+  Memory Bus Width (bits): 256
+  Peak Memory Bandwidth (GB/s): 224.320000
+
+time 500.000000 - 1000.000000, iters: 5 - 100
+ - multiply_kernels::Multiply<float, 2>    took   287.646912 ms stats(iters:   4, var:   126.933113, stddev:    11.266459)
+ - multiply_kernels::Multiply<float, 3>    took    78.918053 ms stats(iters:  13, var:     1.950417, stddev:     1.396573)
+ - multiply_kernels::Multiply<float, 4>    took    33.681572 ms stats(iters:  15, var:     0.029435, stddev:     0.171566)
+ - multiply_kernels::Multiply<float, 6>    took    12.483257 ms stats(iters:  41, var:     0.002221, stddev:     0.047123)
+ - multiply_kernels::Multiply<float, 8>    took     5.562872 ms stats(iters: 100, var:     0.034724, stddev:     0.186343)
+ - multiply_kernels::Multiply<float, 10>   took     6.286970 ms stats(iters: 100, var:     0.010179, stddev:     0.100893)
+ - multiply_kernels::Multiply<float, 16>   took     4.158412 ms stats(iters: 100, var:     0.043726, stddev:     0.209108)
+ - multiply_kernels::Multiply<float, 20>   took     4.711136 ms stats(iters: 100, var:     0.064436, stddev:     0.253843)
+ - multiply_kernels::Multiply<float, 32>   took     4.059203 ms stats(iters: 100, var:     0.044180, stddev:     0.210191)
 
 */
+// clang-format on
