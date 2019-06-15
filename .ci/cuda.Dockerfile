@@ -1,12 +1,13 @@
-FROM nvidia/cuda:10.1-runtime
-
+ARG VERCUDA
+FROM nvidia/cuda:${VERCUDA}-runtime
+ARG VERCUDA
 RUN apt-get update && apt-get install -y --no-install-recommends \
   cuda-libraries-dev-$CUDA_PKG_VERSION \
   cuda-nvml-dev-$CUDA_PKG_VERSION \
   cuda-minimal-build-$CUDA_PKG_VERSION \
   cuda-command-line-tools-$CUDA_PKG_VERSION \
   cmake \
-  libnccl-dev=$NCCL_VERSION-1+cuda10.1 \
+  libnccl-dev=$NCCL_VERSION-1+cuda${VERCUDA} \
   xz-utils \
   build-essential \
   libgtest-dev \

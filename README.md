@@ -1,6 +1,11 @@
 # CUDA Design Patterns
 
-[![Build Status](https://ci.patwie.com/api/badges/PatWie/cuda-design-patterns/status.svg)](https://ci.patwie.com/PatWie/cuda-design-patterns)
+| CUDA 9.0 | CUDA 9.1 | CUDA 10.0 | CUDA 10.1 |
+| ------ | ------ | ------ | ------ |
+| [![Build Status](https://ci.patwie.com/api/badges/PatWie/cuda-design-patterns/status.svg)](https://ci.patwie.com/PatWie/cuda-design-patterns) | [![Build Status](https://ci.patwie.com/api/badges/PatWie/cuda-design-patterns/status.svg)](https://ci.patwie.com/PatWie/cuda-design-patterns) | [![Build Status](https://ci.patwie.com/api/badges/PatWie/cuda-design-patterns/status.svg)](https://ci.patwie.com/PatWie/cuda-design-patterns) | [![Build Status](https://ci.patwie.com/api/badges/PatWie/cuda-design-patterns/status.svg)](https://ci.patwie.com/PatWie/cuda-design-patterns) |
+
+
+
 
 Some best practises I collected over the last years when writing CUDA kernels. These functions
 do not dictate how to use CUDA, these just simplify your workflow. I am not a big fan of libraries which rename things via wrappers. All code below does add additional benefits in CUDA programming.

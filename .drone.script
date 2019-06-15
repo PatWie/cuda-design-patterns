@@ -1,0 +1,70 @@
+def main():
+  return [
+      quality_pipeline(),
+      build_pipeline("9.0"),
+      build_pipeline("9.1"),
+      build_pipeline("10.0"),
+      build_pipeline("10.1"),
+  ]
+
+
+def quality_pipeline():
+  return {
+      'kind': 'pipeline',
+      'name': 'quality',
+      'platform': {
+          'os': "linux",
+          'arch': 'amd64',
+      },
+      'steps': [
+          {
+              'name': 'format',
+              'pull': 'never',
+              'image': 'patwie/clang-format:latest',
+              'commands': [
+                  './.ci/check.sh',
+              ],
+          },
+          {
+              'name': 'lint',
+              'pull': 'never',
+              'image': 'patwie/cpplint:latest',
+              'commands': [
+                  'cpplint --recursive .',
+              ],
+          },
+      ],
+  }
+
+
+def build_pipeline(cuda_version):
+  return {
+      'kind': 'pipeline',
+      'name': 'CUDA %s' % cuda_version,
+      'platform': {
+          'os': "linux",
+          'arch': 'amd64',
+      },
+      'steps': [
+          {
+              'name': 'build',
+              'pull': 'never',
+              'image': 'patwie/cuda:%s' % cuda_version,
+              'commands': [
+                  'mkdir build',
+                  'cd build',
+                  'cmake ..',
+                  'make',
+              ],
+          },
+          {
+              'name': 'test',
+              'pull': 'never',
+              'image': 'patwie/cuda:%s' % cuda_version,
+              'commands': [
+                  './build/test_cpu',
+              ],
+          },
+      ],
+      'depends_on': ['quality']
+  }

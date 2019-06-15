@@ -1,6 +1,6 @@
 ---
 kind: pipeline
-name: default
+name: quality
 
 platform:
   os: linux
@@ -11,31 +11,124 @@ steps:
   pull: never
   image: patwie/clang-format:latest
   commands:
-    - ./.ci/check.sh
+  - ./.ci/check.sh
 
-- name: cpplint
+- name: lint
   pull: never
   image: patwie/cpplint:latest
   commands:
-    - cpplint --recursive .
+  - cpplint --recursive .
 
-- name: compile
-  image: patwie/cuda:latest
+---
+kind: pipeline
+name: CUDA 9.0
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: build
   pull: never
+  image: patwie/cuda:9.0
   commands:
-    - mkdir build
-    - cd build
-    - cmake ..
-    - make
+  - mkdir build
+  - cd build
+  - cmake ..
+  - make
 
 - name: test
-  image: patwie/cuda:latest
   pull: never
+  image: patwie/cuda:9.0
   commands:
-    - ./build/test_cpu
+  - ./build/test_cpu
+
+depends_on:
+- quality
+
+---
+kind: pipeline
+name: CUDA 9.1
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: build
+  pull: never
+  image: patwie/cuda:9.1
+  commands:
+  - mkdir build
+  - cd build
+  - cmake ..
+  - make
+
+- name: test
+  pull: never
+  image: patwie/cuda:9.1
+  commands:
+  - ./build/test_cpu
+
+depends_on:
+- quality
+
+---
+kind: pipeline
+name: CUDA 10.0
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: build
+  pull: never
+  image: patwie/cuda:10.0
+  commands:
+  - mkdir build
+  - cd build
+  - cmake ..
+  - make
+
+- name: test
+  pull: never
+  image: patwie/cuda:10.0
+  commands:
+  - ./build/test_cpu
+
+depends_on:
+- quality
+
+---
+kind: pipeline
+name: CUDA 10.1
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: build
+  pull: never
+  image: patwie/cuda:10.1
+  commands:
+  - mkdir build
+  - cd build
+  - cmake ..
+  - make
+
+- name: test
+  pull: never
+  image: patwie/cuda:10.1
+  commands:
+  - ./build/test_cpu
+
+depends_on:
+- quality
 
 ---
 kind: signature
-hmac: dfdc7bd25d4cd1be5a2cd66aafe0051ed7cfb00971fa169d08d799731e8a0952
+hmac: 9dbcb107110b07688d1316d5ebc9fb6f961a2bad4520b10f812ba2ea88b39f99
 
 ...
