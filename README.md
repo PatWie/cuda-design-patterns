@@ -205,6 +205,8 @@ make test
 
 ## Benchmark Kernels
 
+[EXAMPLE](./src/benchmark-multiply.cu.cc)
+
 **Description:**
 Like in the *CUDA Boilerplate Code* example we pack our kernels into structs. We might want th benchmark different template arguments.
 
