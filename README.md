@@ -2,7 +2,7 @@
 
 | CUDA 9.0 | CUDA 9.1 | CUDA 10.0 | CUDA 10.1 |
 | ------ | ------ | ------ | ------ |
-| [![Build Status](https://ci.patwie.com/api/badges/PatWie/cuda-design-patterns/status.svg)](https://ci.patwie.com/PatWie/cuda-design-patterns) | [![Build Status](https://ci.patwie.com/api/badges/PatWie/cuda-design-patterns/status.svg)](https://ci.patwie.com/PatWie/cuda-design-patterns) | [![Build Status](https://ci.patwie.com/api/badges/PatWie/cuda-design-patterns/status.svg)](https://ci.patwie.com/PatWie/cuda-design-patterns) | [![Build Status](https://ci.patwie.com/api/badges/PatWie/cuda-design-patterns/status.svg)](https://ci.patwie.com/PatWie/cuda-design-patterns) |
+| [![Build Status](https://ci.patwie.com/api/badges/PatWie/cuda-design-patterns/CUDA 9.0/status.svg)](https://ci.patwie.com/PatWie/cuda-design-patterns) | [![Build Status](https://ci.patwie.com/api/badges/PatWie/cuda-design-patterns/CUDA 9.1/status.svg)](https://ci.patwie.com/PatWie/cuda-design-patterns) | [![Build Status](https://ci.patwie.com/api/badges/PatWie/cuda-design-patterns/CUDA 10.0/status.svg)](https://ci.patwie.com/PatWie/cuda-design-patterns) | [![Build Status](https://ci.patwie.com/api/badges/PatWie/cuda-design-patterns/CUDA 10.1/status.svg)](https://ci.patwie.com/PatWie/cuda-design-patterns) |
 
 
 
