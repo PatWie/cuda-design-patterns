@@ -21,6 +21,33 @@ steps:
 
 ---
 kind: pipeline
+name: CUDA 8.0
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: build
+  pull: never
+  image: patwie/cuda:8.0
+  commands:
+  - mkdir build
+  - cd build
+  - cmake ..
+  - make
+
+- name: test
+  pull: never
+  image: patwie/cuda:8.0
+  commands:
+  - ./build/test_cpu
+
+depends_on:
+- quality
+
+---
+kind: pipeline
 name: CUDA 9.0
 
 platform:
@@ -67,6 +94,33 @@ steps:
 - name: test
   pull: never
   image: patwie/cuda:9.1
+  commands:
+  - ./build/test_cpu
+
+depends_on:
+- quality
+
+---
+kind: pipeline
+name: CUDA 9.2
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: build
+  pull: never
+  image: patwie/cuda:9.2
+  commands:
+  - mkdir build
+  - cd build
+  - cmake ..
+  - make
+
+- name: test
+  pull: never
+  image: patwie/cuda:9.2
   commands:
   - ./build/test_cpu
 
@@ -129,6 +183,6 @@ depends_on:
 
 ---
 kind: signature
-hmac: 446ea50b4c40053e6d2e12368533b1bc9aa77d41e93d86e47eba75451bca1d5c
+hmac: 7d2643e4c55153be2ec8b9abff2231bd4b10f0be12de2308e98025346504d8c6
 
 ...

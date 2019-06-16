@@ -1,8 +1,10 @@
 def main():
   return [
       quality_pipeline(),
+      build_pipeline("8.0"),
       build_pipeline("9.0"),
       build_pipeline("9.1"),
+      build_pipeline("9.2"),
       build_pipeline("10.0"),
       build_pipeline("10.1"),
   ]
