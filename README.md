@@ -1,12 +1,5 @@
 # CUDA Design Patterns
 
-| CUDA 8.0 | CUDA 9.0 | CUDA 9.1 | CUDA 9.2 | CUDA 10.0 | CUDA 10.1 |
-| ------ | ------ | ------ | ------ | ------ |------ |
-| [![Build Status](https://ci.patwie.com/api/badges/PatWie/cuda-design-patterns/CUDA%208.0/status.svg)](https://ci.patwie.com/PatWie/cuda-design-patterns) | [![Build Status](https://ci.patwie.com/api/badges/PatWie/cuda-design-patterns/CUDA%209.0/status.svg)](https://ci.patwie.com/PatWie/cuda-design-patterns) | [![Build Status](https://ci.patwie.com/api/badges/PatWie/cuda-design-patterns/CUDA%209.1/status.svg)](https://ci.patwie.com/PatWie/cuda-design-patterns) | [![Build Status](https://ci.patwie.com/api/badges/PatWie/cuda-design-patterns/CUDA%209.2/status.svg)](https://ci.patwie.com/PatWie/cuda-design-patterns) | [![Build Status](https://ci.patwie.com/api/badges/PatWie/cuda-design-patterns/CUDA%2010.0/status.svg)](https://ci.patwie.com/PatWie/cuda-design-patterns) | [![Build Status](https://ci.patwie.com/api/badges/PatWie/cuda-design-patterns/CUDA%2010.1/status.svg)](https://ci.patwie.com/PatWie/cuda-design-patterns) |
-
-
-
-
 Some best practises I collected over the last years when writing CUDA kernels. These functions
 do not dictate how to use CUDA, these just simplify your workflow. I am not a big fan of libraries which rename things via wrappers. All code below does add additional benefits in CUDA programming.
 
@@ -154,6 +147,13 @@ __global__ void readme_alternative2(float *src, float *dst,
   auto src_T = NdArray(src, B, H, W, C);
   auto dst_T = NdArray(dst, B, H, W, C);
   dst_T(b, h, w, c + 1) = src_T(b, h, w, c);
+
+  // Unflatten the index.
+  auto index = NdIndex<4>(B, H, W, C);
+  size_t flattened_index = index(b, h, w, c);
+
+  int b_=0, h_=0, w_=0, c_=0;
+  index.unflatten(flattened_index, b_, h_, w_, c_);
 }
 ```
 

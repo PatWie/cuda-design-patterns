@@ -68,6 +68,30 @@ struct position_helper<TRank, TRemaining, T> {
   }
 };
 
+template <size_t TRank, size_t TPos, size_t TRemaining>
+struct unflatten_helper {
+  template <class... Ts>
+  static constexpr void call(const size_t dimensions_[TRank],
+                             size_t flattenedIndex, size_t& index,
+                             Ts&... indices) noexcept {
+    const size_t pitch =
+        pitch_helper<TRank, 1, TPos, TRank - 1>().call(dimensions_);
+    index = flattenedIndex / pitch;
+    unflatten_helper<TRank, TPos + 1, TRemaining - 1>::call(
+        dimensions_, flattenedIndex % pitch, indices...);
+  }
+};
+
+template <size_t TRank, size_t TPos>
+struct unflatten_helper<TRank, TPos, 1> {
+  template <class... Ts>
+  static constexpr void call(const size_t dimensions_[TRank],
+                             size_t flattenedIndex, size_t& index,
+                             Ts&... indices) noexcept {
+    index = flattenedIndex;
+  }
+};
+
 };  // namespace internal
 
 template <size_t TRank>
@@ -84,7 +108,7 @@ struct BaseNdIndex {
    * Check whether given coordinate is in range.
    */
   template <class... Ts>
-  constexpr cuda_inline bool valid(size_t i0, Ts... is) const {
+  constexpr cuda_inline bool valid(size_t i0, Ts... is) const noexcept {
     static_assert(size_t(1) + sizeof...(Ts) == TRank,
                   "Number of dimensions does not match rank! "
                   "YOU_MADE_A_PROGAMMING_MISTAKE");
@@ -95,7 +119,7 @@ struct BaseNdIndex {
    * Return the number of axes.
    * @return number of axes
    */
-  constexpr cuda_inline size_t rank() const { return TRank; }
+  constexpr cuda_inline size_t rank() const noexcept { return TRank; }
 
   /**
    * Return the dimension for a given axis.
@@ -105,9 +129,29 @@ struct BaseNdIndex {
    * @return dimension for given axis
    */
   template <size_t TAxis>
-  constexpr cuda_inline size_t dim() const {
+  constexpr cuda_inline size_t dim() const noexcept {
     static_assert(TAxis < TRank, "axis < rank failed");
     return dimensions_[TAxis];
+  }
+
+  /**
+   * Unflatten a flattened index and retrieve the corresponding
+   * indices for each dimension.
+   *
+   *     size_t i=0, j=0, k=0;
+   *     idx.unflatten(flattenedIndex, i, j, k);
+   *
+   * @param flattenedIndex the flattened index to unflatten
+   * @param indices references to variables to store the indices
+   */
+  template <class... Ts>
+  constexpr cuda_inline void unflatten(size_t flattenedIndex,
+                                       Ts&... indices) const noexcept {
+    static_assert(sizeof...(Ts) == TRank,
+                  "Number of indices does not match rank! "
+                  "YOU_MADE_A_PROGAMMING_MISTAKE");
+    internal::unflatten_helper<TRank, 0, TRank>::call(
+        dimensions_, flattenedIndex, indices...);
   }
 
  private:
